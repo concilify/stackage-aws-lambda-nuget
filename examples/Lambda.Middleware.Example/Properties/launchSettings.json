@@ -1,0 +1,12 @@
+{
+  "$schema": "http://json.schemastore.org/launchsettings.json",
+  "profiles": {
+    "Lambda.Middleware.Example": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development",
+        "AWS_LAMBDA_RUNTIME_API": "localhost:9001/middleware"
+      }
+    }
+  }
+}
