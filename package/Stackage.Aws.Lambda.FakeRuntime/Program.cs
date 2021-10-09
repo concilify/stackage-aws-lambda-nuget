@@ -10,7 +10,15 @@ namespace Stackage.Aws.Lambda.FakeRuntime
    {
       public static async Task Main(string[] args)
       {
-         var host = new HostBuilder()
+         var host = CreateHostBuilder(args)
+            .Build();
+
+         await host.RunAsync();
+      }
+
+      private static IHostBuilder CreateHostBuilder(string[] args)
+      {
+         return new HostBuilder()
             .UseDefaultBuilder(args)
             .UseSerilog((context, builder) => { builder.ReadFrom.Configuration(context.Configuration); })
             .ConfigureWebHost(webHostBuilder =>
@@ -22,10 +30,7 @@ namespace Stackage.Aws.Lambda.FakeRuntime
                      options.Configure(context.Configuration.GetSection("Kestrel"));
                   })
                   .UseStartup<FakeRuntimeStartup>();
-            })
-            .Build();
-
-         await host.RunAsync();
+            });
       }
    }
 }
