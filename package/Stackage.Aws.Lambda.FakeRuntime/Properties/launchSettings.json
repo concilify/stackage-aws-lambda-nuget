@@ -4,8 +4,7 @@
     "Stackage.Aws.Lambda.FakeRuntime": {
       "commandName": "Project",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development",
-        "STACKAGEAWSLAMBDAFAKERUNTIME_KESTREL__ENDPOINTS__HTTP__URL": "http://localhost:9001"
+        "ASPNETCORE_ENVIRONMENT": "Development"
       }
     }
   }
