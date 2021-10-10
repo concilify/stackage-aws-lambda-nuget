@@ -1,0 +1,25 @@
+name: Release Preview
+
+on:
+  push:
+    tags:
+    - "v[0-9]+.[0-9]+.[0-9]+-preview[0-9][0-9][0-9]"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DOTNET_NOLOGO: true
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Set VERSION
+      run: echo "VERSION=${GITHUB_REF/refs\/tags\/v/}" >> $GITHUB_ENV
+    - name: Pack
+      run: |
+        dotnet pack --configuration Release -p:Version=${VERSION} --output .
+    - name: Push
+      run: dotnet nuget push *.${VERSION}.nupkg --source https://api.nuget.org/v3/index.json --api-key ${NUGET_API_KEY}
+      env:
+        NUGET_API_KEY: ${{ secrets.STACKAGE_NUGET_PUSH_TOKEN }}

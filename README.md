@@ -1,5 +1,11 @@
 # stackage-aws-lambda-nuget
 
+## Installation
+
+To enable debugging lambda functions that use the custom runtime install the fake runtime package. To use a pre-release package you will need to specify the version.
+
+`dotnet tool install --global Stackage.Aws.Lambda.FakeRuntime [--version {VERSION}]`
+
 ## Examples
 
 ### Building
@@ -9,6 +15,16 @@ From the root of the repository, build the lambda deployment packages.
 `dotnet lambda package --project-location examples/Lambda.Basic.Example --output-package Lambda.Basic.Example.zip`
 
 `dotnet lambda package --project-location examples/Lambda.Middleware.Example --output-package Lambda.Middleware.Example.zip`
+
+## Deployment Concerns
+
+### Prerequisites
+
+A secret named `NUGET_PUSH_TOKEN` containing a NuGet API key must have been added in order for GitHub Actions to be able to push NuGet packages
+
+### Releasing
+
+Tag the commit in the `main` branch that you wish to release with format `v*.*.*`. GitHub Actions will build this version and push the package to NuGet. Use format `v*.*.*-preview***` to build a pre-release NuGet package.
 
 ## Developing Locally
 
