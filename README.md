@@ -2,9 +2,9 @@
 
 ## Installation
 
-To enable debugging lambda functions that use the custom runtime install the fake runtime package.
+To enable debugging lambda functions that use the custom runtime install the fake runtime package. To use a pre-release package you will need to specify the version.
 
-`dotnet tool install --global Stackage.Aws.Lambda.FakeRuntime`
+`dotnet tool install --global Stackage.Aws.Lambda.FakeRuntime [--version {VERSION}]`
 
 ## Examples
 
