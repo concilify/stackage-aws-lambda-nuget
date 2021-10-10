@@ -15,6 +15,7 @@ namespace Stackage.Aws.Lambda.FakeRuntime
 
          await host.RunAsync();
       }
+
       private static IHostBuilder CreateHostBuilder(string[] args)
       {
          return new HostBuilder()

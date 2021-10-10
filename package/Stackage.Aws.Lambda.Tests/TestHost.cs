@@ -1,5 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Net;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Amazon.Lambda.Serialization.SystemTextJson;
@@ -7,6 +10,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Serilog;
 using Stackage.Aws.Lambda.Abstractions;
 using Stackage.Aws.Lambda.FakeRuntime;
 using Stackage.Aws.Lambda.FakeRuntime.Model;
@@ -16,12 +20,14 @@ namespace Stackage.Aws.Lambda.Tests
 {
    public static class TestHost
    {
+      private const string RuntimeApiHostAndPort = "localhost:9001";
+
       public static async Task<LambdaFunction.Dictionary> RunAsync(
          Action<ILambdaHostBuilder> configure,
          string functionName,
          params LambdaRequest[] invokeRequests)
       {
-         return await RunAsync(LambdaHost.Create(builder =>
+         return await RunAsync<Stream>(LambdaHost.Create(builder =>
             {
                builder.UseSerializer<CamelCaseLambdaJsonSerializer>();
                configure(builder);
@@ -35,7 +41,7 @@ namespace Stackage.Aws.Lambda.Tests
          string functionName,
          params LambdaRequest[] invokeRequests)
       {
-         return await RunAsync(LambdaHost.Create<TRequest>(builder =>
+         return await RunAsync<TRequest>(LambdaHost.Create<TRequest>(builder =>
             {
                builder.UseSerializer<CamelCaseLambdaJsonSerializer>();
                configure(builder);
@@ -44,12 +50,12 @@ namespace Stackage.Aws.Lambda.Tests
             invokeRequests);
       }
 
-      private static async Task<LambdaFunction.Dictionary> RunAsync(
+      private static async Task<LambdaFunction.Dictionary> RunAsync<TRequest>(
          IHostBuilder builder,
          string functionName,
          params LambdaRequest[] invokeRequests)
       {
-         Environment.SetEnvironmentVariable("AWS_LAMBDA_RUNTIME_API", $"localhost:9001/{functionName}");
+         Environment.SetEnvironmentVariable("AWS_LAMBDA_RUNTIME_API", $"{RuntimeApiHostAndPort}/{functionName}");
 
          var tokenSource = new CancellationTokenSource(5000);
 
@@ -58,11 +64,17 @@ namespace Stackage.Aws.Lambda.Tests
             {
                configurationBuilder.AddInMemoryCollection(new Dictionary<string, string>
                {
-                  {"KESTREL:ENDPOINTS:HTTP:URL", "http://localhost:9001"}
+                  {"KESTREL:ENDPOINTS:HTTP:URL", $"http://{RuntimeApiHostAndPort}"}
                });
+            })
+            .UseSerilog((_, configuration) =>
+            {
+               configuration.MinimumLevel.Debug();
+               configuration.WriteTo.Console();
             })
             .ConfigureServices(services =>
             {
+               services.Decorate<ILambdaListener<TRequest>, DelayedStartLambdaListener<TRequest>>();
                services.Configure<HostOptions>(options =>
                {
                   options.ShutdownTimeout = TimeSpan.FromMilliseconds(10);
@@ -91,6 +103,41 @@ namespace Stackage.Aws.Lambda.Tests
          await host.RunAsync(tokenSource.Token);
 
          return functions;
+      }
+
+      // Delay listener start to allow for fake runtime api to start
+      private class DelayedStartLambdaListener<TRequest> : ILambdaListener<TRequest>
+      {
+         private readonly ILambdaListener<TRequest> _innerListener;
+
+         public DelayedStartLambdaListener(ILambdaListener<TRequest> innerListener)
+         {
+            _innerListener = innerListener;
+         }
+
+         public async Task ListenAsync(CancellationToken cancellationToken)
+         {
+            using var httpClient = new HttpClient { BaseAddress = new Uri($"http://{RuntimeApiHostAndPort}")};
+
+            for (var i = 0; i < 30; i++)
+            {
+               try
+               {
+                  var response = await httpClient.GetAsync("health", cancellationToken);
+
+                  if (response.StatusCode == HttpStatusCode.OK)
+                  {
+                     break;
+                  }
+               }
+               catch
+               {
+                  await Task.Delay(100, cancellationToken);
+               }
+            }
+
+            await _innerListener.ListenAsync(cancellationToken);
+         }
       }
    }
 }
