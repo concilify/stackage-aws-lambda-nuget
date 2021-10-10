@@ -105,6 +105,7 @@ namespace Stackage.Aws.Lambda.Tests
          return functions;
       }
 
+      // Delay listener start to allow for fake runtime api to start
       private class DelayedStartLambdaListener<TRequest> : ILambdaListener<TRequest>
       {
          private readonly ILambdaListener<TRequest> _innerListener;
