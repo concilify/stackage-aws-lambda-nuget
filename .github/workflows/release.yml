@@ -26,6 +26,6 @@ jobs:
     - name: Test
       run: dotnet test --configuration Release -p:Version=${VERSION}
     - name: Push
-      run: dotnet nuget push *.${VERSION}.nupkg --source https://api.nuget.org/v3/index.json --api-key ${NUGET_PUSH_TOKEN}
+      run: dotnet nuget push *.${VERSION}.nupkg --source https://api.nuget.org/v3/index.json --api-key ${NUGET_API_KEY}
       env:
-        NUGET_PUSH_TOKEN: ${{ secrets.NUGET_PUSH_TOKEN }}
+        NUGET_API_KEY: ${{ secrets.STACKAGE_NUGET_PUSH_TOKEN }}

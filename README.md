@@ -1,5 +1,11 @@
 # stackage-aws-lambda-nuget
 
+## Installation
+
+To enable debugging lambda functions that use the custom runtime install the fake runtime package.
+
+`dotnet tool install --global Stackage.Aws.Lambda.FakeRuntime`
+
 ## Examples
 
 ### Building
