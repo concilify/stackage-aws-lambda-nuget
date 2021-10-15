@@ -10,7 +10,7 @@ namespace Stackage.Aws.Lambda.Tests.Scenarios
 {
    public class throwing_stream_handler_with_exception_middleware
    {
-      private LambdaResponse.Dictionary _responses;
+      private LambdaCompletion.Dictionary _responses;
 
       [OneTimeSetUp]
       public async Task setup_scenario()
@@ -23,7 +23,7 @@ namespace Stackage.Aws.Lambda.Tests.Scenarios
             },
             "my-function",
             new LambdaRequest("req-id", "AnyString"));
-         _responses = functions.Single().Value.Responses;
+         _responses = functions.Single().Value.CompletedRequests;
       }
 
       [Test]
@@ -35,7 +35,7 @@ namespace Stackage.Aws.Lambda.Tests.Scenarios
       [Test]
       public void handler_received_request_and_returned_response()
       {
-         Assert.That(_responses.Values.Single().Body, Is.EqualTo("An error occurred - ThrowingStreamLambdaHandler failed"));
+         Assert.That(_responses.Values.Single().ResponseBody, Is.EqualTo("An error occurred - ThrowingStreamLambdaHandler failed"));
       }
    }
 }
