@@ -45,3 +45,19 @@ From the same directory, install the package.
 Finally, run the tool.
 
 `fake-lambda-runtime`
+
+
+
+
+
+
+
+aws lambda invoke --function-name my-function --payload '{ "key": "value" }' response.json
+
+aws lambda invoke --endpoint-url http://localhost:9001 --function-name my-function --payload '{ "key": "value" }' response.json
+aws lambda invoke --endpoint-url http://localhost:9001 --function-name my-function --invocation-type Event --payload '{ "key": "value" }' response.json
+
+--invocation-type "RequestResponse"
+--invocation-type "Event"
+--invocation-type "DryRun"
+

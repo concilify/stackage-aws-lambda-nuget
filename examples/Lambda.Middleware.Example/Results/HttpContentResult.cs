@@ -2,25 +2,26 @@ using System.IO;
 using Amazon.Lambda.Core;
 using Stackage.Aws.Lambda.Abstractions;
 
-namespace Lambda.Middleware.Example.Handler
+namespace Lambda.Middleware.Example.Results
 {
-   public class ContentResult<TContent> : ILambdaResult
+   public class HttpContentResult<TContent> : ILambdaResult
    {
       private readonly TContent _content;
       private readonly int _statusCode;
 
-      public ContentResult(TContent content, int statusCode = 200)
+      public HttpContentResult(TContent content, int statusCode = 200)
       {
          _content = content;
          _statusCode = statusCode;
       }
 
-      public Stream SerializeResult(ILambdaSerializer serializer, LambdaContext context)
+      public Stream SerializeResult(ILambdaSerializer serializer)
       {
+         // https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-create-api-as-simple-proxy-for-lambda.html
          var response = new
          {
             StatusCode = _statusCode,
-            Content = _content
+            Body = _content
          };
 
          var responseStream = new MemoryStream();

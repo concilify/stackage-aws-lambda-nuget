@@ -19,10 +19,15 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Controllers
       [HttpPost("{functionName}/invocations")]
       public async Task<IActionResult> InvocationsAsync(string functionName)
       {
+         // X-Amz-Invocation-Type DryRun, Event, RequestResponse
+
          using (var reader = new StreamReader(Request.Body))
          {
             _functionsService.Invoke(functionName, await reader.ReadToEndAsync());
          }
+
+         // The HTTP status code is in the 200 range for a successful request. For the RequestResponse invocation type,
+         // this status code is 200. For the Event invocation type, this status code is 202. For the DryRun invocation type, the status code is 204.
 
          return Ok();
       }

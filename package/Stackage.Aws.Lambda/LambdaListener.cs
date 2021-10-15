@@ -66,11 +66,11 @@ namespace Stackage.Aws.Lambda
       {
          using var invocation = await _runtimeApiClient.GetNextInvocationAsync(cancellationToken);
 
+         var stopwatch = Stopwatch.StartNew();
+
          using var _ = _logger.BeginScope(new Dictionary<string, object> {{"AwsRequestId", invocation.LambdaContext.AwsRequestId}});
 
          _logger.LogInformation("Handling request");
-
-         var stopwatch = Stopwatch.StartNew();
 
          Stream response;
 
