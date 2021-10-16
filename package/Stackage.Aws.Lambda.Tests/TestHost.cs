@@ -94,7 +94,7 @@ namespace Stackage.Aws.Lambda.Tests
 
          foreach (var request in invokeRequests)
          {
-            function.Requests.Enqueue(request);
+            function.QueuedRequests.Enqueue(request);
          }
 
          var functions = host.Services.GetRequiredService<LambdaFunction.Dictionary>();

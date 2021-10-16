@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -21,40 +22,70 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Services
          _logger = logger;
       }
 
-      public void Invoke(string functionName, string body)
+      public LambdaRequest Invoke(string functionName, string body)
       {
          var function = _functions.GetOrAdd(functionName, name => new LambdaFunction(name));
 
-         function.Requests.Enqueue(new LambdaRequest(_idGenerator.Generate(), body));
-      }
+         var request = new LambdaRequest(_idGenerator.Generate(), body);
 
-      public async Task<LambdaRequest> WaitForNextInvocationAsync(string functionName, CancellationToken cancellationToken)
-      {
-         var function = _functions.GetOrAdd(functionName, name => new LambdaFunction(name));
-
-         var request = await function.Requests.DequeueAsync(cancellationToken);
+         function.QueuedRequests.Enqueue(request);
 
          _logger.LogInformation("Invocation requested {awsRequestId} {request}", request.AwsRequestId, request.Body);
 
          return request;
       }
 
-      public void InvocationResponse(string functionName, string awsRequestId, string body)
+      public async Task<LambdaRequest> WaitForNextInvocationAsync(string functionName, CancellationToken cancellationToken)
       {
          var function = _functions.GetOrAdd(functionName, name => new LambdaFunction(name));
 
-         function.Responses.TryAdd(awsRequestId, new LambdaResponse(awsRequestId, body, true));
+         var request = await function.QueuedRequests.DequeueAsync(cancellationToken);
+
+         function.InFlightRequests.TryAdd(request.AwsRequestId, request);
+
+         _logger.LogInformation("Invocation scheduled {awsRequestId} {request}", request.AwsRequestId, request.Body);
+
+         return request;
+      }
+
+      public void InvocationResponse(string functionName, string awsRequestId, string body)
+      {
+         RequestCompleted(functionName, awsRequestId, body, true);
 
          _logger.LogInformation("Invocation succeeded {awsRequestId} {response}", awsRequestId, body);
       }
 
       public void InvocationError(string functionName, string awsRequestId, string body)
       {
-         var function = _functions.GetOrAdd(functionName, name => new LambdaFunction(name));
-
-         function.Responses.TryAdd(awsRequestId, new LambdaResponse(awsRequestId, body, false));
+         RequestCompleted(functionName, awsRequestId, body, false);
 
          _logger.LogInformation("Invocation failed {awsRequestId} {response}", awsRequestId, body);
+      }
+
+      public LambdaCompletion GetCompletion(string functionName, string awsRequestId)
+      {
+         var function = _functions.GetOrAdd(functionName, name => new LambdaFunction(name));
+
+         if (!function.CompletedRequests.TryGetValue(awsRequestId, out var completion))
+         {
+            throw new InvalidOperationException("Unrecognised Amazon Request Id");
+         }
+
+         return completion;
+      }
+
+      private void RequestCompleted(string functionName, string awsRequestId, string responseBody, bool success)
+      {
+         var function = _functions.GetOrAdd(functionName, name => new LambdaFunction(name));
+
+         if (!function.InFlightRequests.TryRemove(awsRequestId, out var outboxRequest))
+         {
+            throw new InvalidOperationException("Unrecognised Amazon Request Id");
+         }
+
+         function.CompletedRequests.TryAdd(awsRequestId, new LambdaCompletion(awsRequestId, outboxRequest.Body, responseBody, success));
+
+         outboxRequest.NotifyCompletion();
       }
    }
 }

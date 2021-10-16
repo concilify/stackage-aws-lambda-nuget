@@ -31,7 +31,7 @@ namespace Stackage.Aws.Lambda.Middleware
          {
             _logger.LogError(e, "An unhandled exception occured");
 
-            return _resultFactory.UnhandledException(e, context);
+            return _resultFactory.UnhandledException(e);
          }
       }
    }

@@ -18,9 +18,9 @@ namespace Stackage.Aws.Lambda.Tests
          _cancellationTokenSource = cancellationTokenSource;
       }
 
-      public void Invoke(string functionName, string body)
+      public LambdaRequest Invoke(string functionName, string body)
       {
-         _decorated.Invoke(functionName, body);
+         return _decorated.Invoke(functionName, body);
       }
 
       public async Task<LambdaRequest> WaitForNextInvocationAsync(string functionName, CancellationToken cancellationToken)
@@ -38,6 +38,11 @@ namespace Stackage.Aws.Lambda.Tests
       {
          _decorated.InvocationError(functionName, awsRequestId, body);
          _cancellationTokenSource.Cancel();
+      }
+
+      public LambdaCompletion GetCompletion(string functionName, string awsRequestId)
+      {
+         return _decorated.GetCompletion(functionName, awsRequestId);
       }
    }
 }

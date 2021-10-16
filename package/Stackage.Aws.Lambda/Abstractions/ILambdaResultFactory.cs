@@ -4,8 +4,8 @@ namespace Stackage.Aws.Lambda.Abstractions
 {
    public interface ILambdaResultFactory
    {
-      ILambdaResult UnhandledException(Exception exception, LambdaContext context);
+      ILambdaResult UnhandledException(Exception exception);
 
-      ILambdaResult RemainingTimeExpired(LambdaContext context);
+      ILambdaResult RemainingTimeExpired();
    }
 }

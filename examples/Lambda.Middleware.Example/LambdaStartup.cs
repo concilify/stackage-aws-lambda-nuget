@@ -1,3 +1,4 @@
+using Lambda.Middleware.Example.Integrations;
 using Lambda.Middleware.Example.Middleware;
 using Lambda.Middleware.Example.Model;
 using Lambda.Middleware.Example.Results;
@@ -9,7 +10,7 @@ using Stackage.Aws.Lambda.Middleware;
 
 namespace Lambda.Middleware.Example
 {
-   public class LambdaStartup : IConfigureServices, IConfigurePipeline<InputPoco>
+   public class LambdaStartup : ILambdaStartup<InputPoco>
    {
       private readonly IConfiguration _configuration;
 
@@ -25,7 +26,7 @@ namespace Lambda.Middleware.Example
          // TODO: Create correlationId type service
       }
 
-      public void Configure(ILambdaPipelineBuilder<InputPoco> pipelineBuilder)
+      public void ConfigurePipeline(ILambdaPipelineBuilder<InputPoco> pipelineBuilder)
       {
          pipelineBuilder.Use<RequestLoggingMiddleware<InputPoco>, InputPoco>();
          pipelineBuilder.Use<ExceptionHandlingMiddleware<InputPoco>, InputPoco>();

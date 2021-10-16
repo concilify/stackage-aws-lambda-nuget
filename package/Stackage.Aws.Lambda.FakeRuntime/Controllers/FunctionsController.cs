@@ -1,6 +1,8 @@
+using System;
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Stackage.Aws.Lambda.FakeRuntime.Model;
 using Stackage.Aws.Lambda.FakeRuntime.Services;
 
 namespace Stackage.Aws.Lambda.FakeRuntime.Controllers
@@ -10,26 +12,65 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Controllers
    public class FunctionsController : ControllerBase
    {
       private readonly IFunctionsService _functionsService;
+      private readonly IGenerateIds _idGenerator;
 
-      public FunctionsController(IFunctionsService functionsService)
+      public FunctionsController(
+         IFunctionsService functionsService,
+         IGenerateIds idGenerator)
       {
          _functionsService = functionsService;
+         _idGenerator = idGenerator;
       }
 
       [HttpPost("{functionName}/invocations")]
       public async Task<IActionResult> InvocationsAsync(string functionName)
       {
-         // X-Amz-Invocation-Type DryRun, Event, RequestResponse
+         var invocationType = GetInvocationType();
+
+         if (invocationType == "DryRun")
+         {
+            Response.Headers.Add("x-amzn-RequestId", _idGenerator.Generate());
+            return NoContent();
+         }
+
+         if (invocationType != "RequestResponse" && invocationType != "Event")
+         {
+            return BadRequest("X-Amz-Invocation-Type must be one of RequestResponse, Event or DryRun");
+         }
+
+         LambdaRequest request;
 
          using (var reader = new StreamReader(Request.Body))
          {
-            _functionsService.Invoke(functionName, await reader.ReadToEndAsync());
+            request = _functionsService.Invoke(functionName, await reader.ReadToEndAsync());
          }
 
-         // The HTTP status code is in the 200 range for a successful request. For the RequestResponse invocation type,
-         // this status code is 200. For the Event invocation type, this status code is 202. For the DryRun invocation type, the status code is 204.
+         Response.Headers.Add("x-amzn-RequestId", request.AwsRequestId);
 
-         return Ok();
+         if (invocationType == "Event")
+         {
+            return Accepted();
+         }
+
+         await request.WaitForCompletion();
+
+         var completion = _functionsService.GetCompletion(functionName, request.AwsRequestId);
+
+         Response.Headers.Add("X-Amz-Executed-Version", "$LATEST");
+
+         return Content(completion.ResponseBody, "application/json");
+      }
+
+      private string GetInvocationType()
+      {
+         var invocationType = Request.Headers["X-Amz-Invocation-Type"];
+
+         if (invocationType.Count == 0)
+         {
+            return "RequestResponse";
+         }
+
+         return invocationType.ToString();
       }
    }
 }

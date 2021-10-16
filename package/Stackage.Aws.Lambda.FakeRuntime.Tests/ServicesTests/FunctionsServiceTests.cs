@@ -6,6 +6,7 @@ using FakeItEasy;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NUnit.Framework;
+using Serilog;
 using Stackage.Aws.Lambda.FakeRuntime.Model;
 using Stackage.Aws.Lambda.FakeRuntime.Services;
 using Stackage.Aws.Lambda.FakeRuntime.Tests.Stubs;
@@ -31,7 +32,7 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Tests.ServicesTests
          var function = functions["unknown-function"];
          Assert.That(function.Name, Is.EqualTo("unknown-function"));
 
-         await AssertRequestsAreEqualAsync(function.Requests, new[] {new LambdaRequest("arbitrary-id", "arbitrary-body")});
+         await AssertRequestsAreEqualAsync(function.QueuedRequests, new[] {new LambdaRequest("arbitrary-id", "arbitrary-body")});
       }
 
       [Test]
@@ -54,7 +55,7 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Tests.ServicesTests
 
          var function = functions[functionName];
 
-         await AssertRequestsAreEqualAsync(function.Requests, new[] {new LambdaRequest("arbitrary-id", "arbitrary-body")});
+         await AssertRequestsAreEqualAsync(function.QueuedRequests, new[] {new LambdaRequest("arbitrary-id", "arbitrary-body")});
       }
 
       [Test]
@@ -63,7 +64,7 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Tests.ServicesTests
          const string functionName = "known-function";
 
          var existingFunction = new LambdaFunction(functionName);
-         existingFunction.Requests.Enqueue(new LambdaRequest("existing-id", "existing-body"));
+         existingFunction.QueuedRequests.Enqueue(new LambdaRequest("existing-id", "existing-body"));
 
          var functions = new LambdaFunction.Dictionary();
          functions.TryAdd(functionName, existingFunction);
@@ -79,7 +80,7 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Tests.ServicesTests
          var function = functions[functionName];
 
          await AssertRequestsAreEqualAsync(
-            function.Requests,
+            function.QueuedRequests,
             new[]
             {
                new LambdaRequest("existing-id", "existing-body"),
@@ -106,7 +107,7 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Tests.ServicesTests
          var function = functions["unknown-function"];
          Assert.That(function.Name, Is.EqualTo("unknown-function"));
 
-         Assert.That(function.Requests.Count, Is.EqualTo(0));
+         Assert.That(function.QueuedRequests.Count, Is.EqualTo(0));
       }
 
       [Test]
@@ -121,16 +122,13 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Tests.ServicesTests
 
          var cancellationTokenSource = new CancellationTokenSource(100);
 
-         Assert.ThrowsAsync<OperationCanceledException>(async () =>
-         {
-            await service.WaitForNextInvocationAsync(functionName, cancellationTokenSource.Token);
-         });
+         Assert.ThrowsAsync<OperationCanceledException>(async () => { await service.WaitForNextInvocationAsync(functionName, cancellationTokenSource.Token); });
 
          Assert.That(functions.Count, Is.EqualTo(1));
 
          var function = functions[functionName];
 
-         Assert.That(function.Requests.Count, Is.EqualTo(0));
+         Assert.That(function.QueuedRequests.Count, Is.EqualTo(0));
       }
 
       [Test]
@@ -139,8 +137,8 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Tests.ServicesTests
          const string functionName = "known-function";
 
          var existingFunction = new LambdaFunction(functionName);
-         existingFunction.Requests.Enqueue(new LambdaRequest("first-id", "first-body"));
-         existingFunction.Requests.Enqueue(new LambdaRequest("second-id", "second-body"));
+         existingFunction.QueuedRequests.Enqueue(new LambdaRequest("first-id", "first-body"));
+         existingFunction.QueuedRequests.Enqueue(new LambdaRequest("second-id", "second-body"));
 
          var functions = new LambdaFunction.Dictionary();
          functions.TryAdd(functionName, existingFunction);
@@ -155,7 +153,7 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Tests.ServicesTests
 
          var function = functions[functionName];
 
-         await AssertRequestsAreEqualAsync(function.Requests, new[] {new LambdaRequest("second-id", "second-body")});
+         await AssertRequestsAreEqualAsync(function.QueuedRequests, new[] {new LambdaRequest("second-id", "second-body")});
       }
 
       [Test]
@@ -175,33 +173,42 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Tests.ServicesTests
          var function = functions["unknown-function"];
          Assert.That(function.Name, Is.EqualTo("unknown-function"));
 
-         await AssertRequestsAreEqualAsync(function.Requests, new[] {new LambdaRequest("arbitrary-id", "arbitrary-body")});
+         await AssertRequestsAreEqualAsync(function.QueuedRequests, new[] {new LambdaRequest("arbitrary-id", "arbitrary-body")});
       }
 
       [Test]
       public void response_tests()
       {
          const string functionName = "known-function";
+         const string awsRequestId = "the-request-id";
 
          var functions = new LambdaFunction.Dictionary();
-         functions.TryAdd(functionName, new LambdaFunction(functionName));
+         var existingFunction = new LambdaFunction(functionName);
+         existingFunction.InFlightRequests.TryAdd(awsRequestId, new LambdaRequest(awsRequestId, "the-request-body"));
+
+         functions.TryAdd(functionName, existingFunction);
 
          var service = CreateService(functions);
 
-         service.InvocationResponse(functionName, "the-request-id", "the-response-body");
+         service.InvocationResponse(functionName, awsRequestId, "the-response-body");
 
          var function = functions[functionName];
 
-         function.Responses.Values.Should().BeEquivalentTo(new[] {new LambdaResponse("the-request-id", "the-response-body", true)});
+         function.CompletedRequests.Values.Should()
+            .BeEquivalentTo(new[] {new LambdaCompletion(awsRequestId, "the-request-body", "the-response-body", true)});
       }
 
       [Test]
       public void error_tests()
       {
          const string functionName = "known-function";
+         const string awsRequestId = "the-request-id";
 
          var functions = new LambdaFunction.Dictionary();
-         functions.TryAdd(functionName, new LambdaFunction(functionName));
+         var existingFunction = new LambdaFunction(functionName);
+         existingFunction.InFlightRequests.TryAdd(awsRequestId, new LambdaRequest(awsRequestId, "the-request-body"));
+
+         functions.TryAdd(functionName, existingFunction);
 
          var service = CreateService(functions);
 
@@ -209,7 +216,8 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Tests.ServicesTests
 
          var function = functions[functionName];
 
-         function.Responses.Values.Should().BeEquivalentTo(new[] {new LambdaResponse("the-request-id", "the-response-body", false)});
+         function.CompletedRequests.Values.Should()
+            .BeEquivalentTo(new[] {new LambdaCompletion("the-request-id", "the-request-body", "the-response-body", false)});
       }
 
       private static async Task AssertRequestsAreEqualAsync(LambdaRequest.Queue requests, IList<LambdaRequest> expectedRequests)
