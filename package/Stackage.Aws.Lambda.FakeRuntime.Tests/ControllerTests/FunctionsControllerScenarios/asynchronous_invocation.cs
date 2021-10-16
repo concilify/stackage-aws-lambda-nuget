@@ -1,3 +1,5 @@
+using System;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
@@ -6,19 +8,26 @@ using FakeItEasy;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
+using Stackage.Aws.Lambda.FakeRuntime.Model;
 using Stackage.Aws.Lambda.FakeRuntime.Services;
+using Stackage.Aws.Lambda.FakeRuntime.Tests.Stubs;
 
 namespace Stackage.Aws.Lambda.FakeRuntime.Tests.ControllerTests.FunctionsControllerScenarios
 {
    public class asynchronous_invocation
    {
+      private string _awsRequestId;
       private IFunctionsService _functionsService;
       private HttpResponseMessage _response;
 
       [OneTimeSetUp]
       public async Task setup_scenario()
       {
+         _awsRequestId = Guid.NewGuid().ToString();
          _functionsService = A.Fake<IFunctionsService>();
+
+         A.CallTo(() => _functionsService.Invoke("my-function", "{\"foo\":\"bar\"}"))
+            .Returns(new LambdaRequest(_awsRequestId, "{\"foo\":\"bar\"}"));
 
          using var webApplicationFactory = new WebApplicationFactory<FakeRuntimeStartup>()
             .WithWebHostBuilder(builder =>
@@ -55,9 +64,27 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Tests.ControllerTests.FunctionsControl
       }
 
       [Test]
-      public void endpoint_returns_what_content()
+      public async Task endpoint_returns_empty_content()
       {
-         Assert.Fail();
+         Assert.That(await _response.Content.ReadAsStringAsync(), Is.Empty);
+      }
+
+      [Test]
+      public void endpoint_does_not_return_content_type()
+      {
+         Assert.That(_response.Content.Headers.Contains("Content-Type"), Is.False);
+      }
+
+      [Test]
+      public void endpoint_returns_request_id()
+      {
+         Assert.That(_response.Headers.GetValues("x-amzn-RequestId").Single(), Is.EqualTo(_awsRequestId));
+      }
+
+      [Test]
+      public void endpoint_does_not_return_executed_version()
+      {
+         Assert.That(_response.Headers.Contains("X-Amz-Executed-Version"), Is.False);
       }
    }
 }

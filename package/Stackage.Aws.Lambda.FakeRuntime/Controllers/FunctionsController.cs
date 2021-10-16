@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -11,10 +12,14 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Controllers
    public class FunctionsController : ControllerBase
    {
       private readonly IFunctionsService _functionsService;
+      private readonly IGenerateIds _idGenerator;
 
-      public FunctionsController(IFunctionsService functionsService)
+      public FunctionsController(
+         IFunctionsService functionsService,
+         IGenerateIds idGenerator)
       {
          _functionsService = functionsService;
+         _idGenerator = idGenerator;
       }
 
       [HttpPost("{functionName}/invocations")]
@@ -24,6 +29,7 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Controllers
 
          if (invocationType == "DryRun")
          {
+            Response.Headers.Add("x-amzn-RequestId", _idGenerator.Generate());
             return NoContent();
          }
 
@@ -39,15 +45,18 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Controllers
             request = _functionsService.Invoke(functionName, await reader.ReadToEndAsync());
          }
 
+         Response.Headers.Add("x-amzn-RequestId", request.AwsRequestId);
+
          if (invocationType == "Event")
          {
-            // TODO: What content?
             return Accepted();
          }
 
          await request.WaitForCompletion();
 
          var completion = _functionsService.GetCompletion(functionName, request.AwsRequestId);
+
+         Response.Headers.Add("X-Amz-Executed-Version", "$LATEST");
 
          return Content(completion.ResponseBody, "application/json");
       }

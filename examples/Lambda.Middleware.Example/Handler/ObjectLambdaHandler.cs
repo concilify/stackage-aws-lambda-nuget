@@ -1,23 +1,27 @@
 using System;
 using System.Threading.Tasks;
+using Amazon.Lambda.APIGatewayEvents;
+using Lambda.Middleware.Example.Integrations;
 using Lambda.Middleware.Example.Model;
-using Lambda.Middleware.Example.Results;
 using Stackage.Aws.Lambda.Abstractions;
 
 namespace Lambda.Middleware.Example.Handler
 {
-   public class ObjectLambdaHandler : ILambdaHandler<InputPoco>
+   public class ObjectLambdaHandler : ILambdaHandler<APIGatewayHttpApiV2ProxyRequest<InputPoco>>
    {
-      public async Task<ILambdaResult> HandleAsync(InputPoco request, LambdaContext context)
+      public async Task<ILambdaResult> HandleAsync(APIGatewayHttpApiV2ProxyRequest<InputPoco> request, LambdaContext context)
       {
-         await Task.Yield();
-
-         if (request.Value == "throw")
+         if (request.Body.Action == "throw")
          {
             throw new Exception("Throwing exception from ObjectLambdaHandler");
          }
 
-         return new HttpContentResult<OutputPoco>(new OutputPoco {Value = request.Value});
+         if (request.Body.Action == "delay")
+         {
+            await Task.Delay(1000);
+         }
+
+         return new HttpApiV2ContentResult<OutputPoco>(new OutputPoco {Action = request.Body.Action});
       }
    }
 }

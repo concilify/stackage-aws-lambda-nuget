@@ -3,7 +3,7 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 
-namespace Stackage.Aws.Lambda.FakeRuntime.Tests.ControllerScenarios
+namespace Stackage.Aws.Lambda.FakeRuntime.Tests.ControllerTests.ControllerScenarios
 {
    public static class BackgroundInvocationHandler
    {
