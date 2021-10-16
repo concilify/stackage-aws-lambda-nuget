@@ -9,7 +9,7 @@ using Stackage.Aws.Lambda.Middleware;
 
 namespace Lambda.Middleware.Example
 {
-   public class LambdaStartup : IConfigureServices, IConfigurePipeline<InputPoco>
+   public class LambdaStartup : ILambdaStartup<InputPoco>
    {
       private readonly IConfiguration _configuration;
 

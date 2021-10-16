@@ -18,7 +18,7 @@ namespace Stackage.Aws.Lambda.Tests.Scenarios
          var functions = await TestHost.RunAsync(
             builder =>
             {
-               builder.ConfigurePipeline<StartupWithExceptionHandling<Stream>>();
+               builder.UseStartup<StartupWithExceptionHandling<Stream>>();
                builder.UseHandler<DecorateStreamLambdaHandler>();
             },
             "my-function",

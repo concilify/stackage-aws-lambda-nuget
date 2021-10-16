@@ -17,8 +17,7 @@ namespace Lambda.Middleware.Example
 
          var host = LambdaHost.Create<InputPoco>(builder =>
             {
-               builder.ConfigureServices<LambdaStartup>();
-               builder.ConfigurePipeline<LambdaStartup>();
+               builder.UseStartup<LambdaStartup>();
                builder.UseSerializer<CamelCaseLambdaJsonSerializer>();
                builder.UseHandler<ObjectLambdaHandler, InputPoco>();
             })
