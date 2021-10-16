@@ -5,6 +5,6 @@ namespace Stackage.Aws.Lambda
 {
    public class LambdaPipelineBuilderOptions<TRequest>
    {
-      public Action<ILambdaPipelineBuilder<TRequest>> ConfigurePipeline { get; set; }
+      public Action<ILambdaPipelineBuilder<TRequest>>? ConfigurePipeline { get; set; }
    }
 }

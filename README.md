@@ -44,6 +44,7 @@ Run the following in your console, where `{FUNCTION_NAME}` is the name of your l
 
 ```ps
 aws lambda invoke --endpoint-url http://localhost:9001 --function-name {FUNCTION_NAME} --payload '{\"foo\": \"bar\"}' --cli-binary-format raw-in-base64-out response.json
+```
 
 To perform an asynchronous invocation and not wait for the response, add `--invocation-type Event` to the command.
 

@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Lambda.Middleware.Example.Model;
+using Lambda.Middleware.Example.Results;
 using Stackage.Aws.Lambda.Abstractions;
 
 namespace Lambda.Middleware.Example.Handler
@@ -16,7 +17,7 @@ namespace Lambda.Middleware.Example.Handler
             throw new Exception("Throwing exception from ObjectLambdaHandler");
          }
 
-         return new ContentResult<OutputPoco>(new OutputPoco {Value = request.Value});
+         return new HttpContentResult<OutputPoco>(new OutputPoco {Value = request.Value});
       }
    }
 }

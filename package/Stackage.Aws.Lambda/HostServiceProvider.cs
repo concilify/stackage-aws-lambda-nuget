@@ -13,7 +13,7 @@ namespace Stackage.Aws.Lambda
          _context = context;
       }
 
-      public object GetService(Type serviceType)
+      public object? GetService(Type serviceType)
       {
          if (serviceType == typeof(IHostEnvironment))
          {
