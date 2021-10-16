@@ -1,5 +1,4 @@
 using System.Threading.Tasks;
-using Amazon.Lambda.APIGatewayEvents;
 using Amazon.Lambda.Serialization.SystemTextJson;
 using Lambda.Middleware.Example.Handler;
 using Lambda.Middleware.Example.Model;
@@ -16,12 +15,12 @@ namespace Lambda.Middleware.Example
       {
          // TODO: How best to catch initialisation errors and send to the runtime API
 
-         var host = LambdaHost.Create<APIGatewayHttpApiV2ProxyRequest<InputPoco>>(builder =>
+         var host = LambdaHost.Create<InputPoco>(builder =>
             {
                builder.ConfigureServices<LambdaStartup>();
                builder.ConfigurePipeline<LambdaStartup>();
                builder.UseSerializer<CamelCaseLambdaJsonSerializer>();
-               builder.UseHandler<ObjectLambdaHandler, APIGatewayHttpApiV2ProxyRequest<InputPoco>>();
+               builder.UseHandler<ObjectLambdaHandler, InputPoco>();
             })
             .UseSerilog((context, builder) =>
             {

@@ -1,17 +1,16 @@
 using System.Collections.Generic;
 using System.IO;
-using Amazon.Lambda.APIGatewayEvents;
 using Amazon.Lambda.Core;
 using Stackage.Aws.Lambda.Abstractions;
 
 namespace Lambda.Middleware.Example.Integrations
 {
-   public class HttpApiV2ErrorResult : ILambdaResult
+   public class HttpErrorResult : ILambdaResult
    {
       private readonly int _statusCode;
       private readonly string _message;
 
-      public HttpApiV2ErrorResult(int statusCode, string message)
+      public HttpErrorResult(int statusCode, string message)
       {
          _statusCode = statusCode;
          _message = message;
@@ -19,7 +18,7 @@ namespace Lambda.Middleware.Example.Integrations
 
       public Stream SerializeResult(ILambdaSerializer serializer, LambdaContext context)
       {
-         var response = new APIGatewayHttpApiV2ProxyResponse<string>
+         var response = new
          {
             StatusCode = _statusCode,
             Headers = new Dictionary<string, string>

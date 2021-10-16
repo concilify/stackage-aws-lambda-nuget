@@ -1,4 +1,3 @@
-using Amazon.Lambda.APIGatewayEvents;
 using Lambda.Middleware.Example.Integrations;
 using Lambda.Middleware.Example.Middleware;
 using Lambda.Middleware.Example.Model;
@@ -10,7 +9,7 @@ using Stackage.Aws.Lambda.Middleware;
 
 namespace Lambda.Middleware.Example
 {
-   public class LambdaStartup : IConfigureServices, IConfigurePipeline<APIGatewayHttpApiV2ProxyRequest<InputPoco>>
+   public class LambdaStartup : IConfigureServices, IConfigurePipeline<InputPoco>
    {
       private readonly IConfiguration _configuration;
 
@@ -21,15 +20,15 @@ namespace Lambda.Middleware.Example
 
       public void ConfigureServices(IServiceCollection services)
       {
-         services.AddSingleton<ILambdaResultFactory, HttpApiV2LambdaResultFactory>();
+         services.AddSingleton<ILambdaResultFactory, HttpLambdaResultFactory>();
 
          // TODO: Create correlationId type service
       }
 
-      public void Configure(ILambdaPipelineBuilder<APIGatewayHttpApiV2ProxyRequest<InputPoco>> pipelineBuilder)
+      public void ConfigurePipeline(ILambdaPipelineBuilder<InputPoco> pipelineBuilder)
       {
-         pipelineBuilder.Use<RequestLoggingMiddleware<APIGatewayHttpApiV2ProxyRequest<InputPoco>>, APIGatewayHttpApiV2ProxyRequest<InputPoco>>();
-         pipelineBuilder.Use<ExceptionHandlingMiddleware<APIGatewayHttpApiV2ProxyRequest<InputPoco>>, APIGatewayHttpApiV2ProxyRequest<InputPoco>>();
+         pipelineBuilder.Use<RequestLoggingMiddleware<InputPoco>, InputPoco>();
+         pipelineBuilder.Use<ExceptionHandlingMiddleware<InputPoco>, InputPoco>();
       }
    }
 }

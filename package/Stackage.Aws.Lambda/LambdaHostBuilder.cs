@@ -43,7 +43,7 @@ namespace Stackage.Aws.Lambda
             {
                options.ConfigurePipeline = app =>
                {
-                  startup.Configure(app);
+                  startup.ConfigurePipeline(app);
                };
             });
          });

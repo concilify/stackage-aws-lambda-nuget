@@ -6,7 +6,7 @@ namespace Stackage.Aws.Lambda.Tests
 {
    public class StartupWithExceptionHandling<TRequest> : IConfigurePipeline<TRequest>
    {
-      public void Configure(ILambdaPipelineBuilder<TRequest> pipelineBuilder)
+      public void ConfigurePipeline(ILambdaPipelineBuilder<TRequest> pipelineBuilder)
       {
          pipelineBuilder.Use<ExceptionHandlingMiddleware<TRequest>, TRequest>();
       }
