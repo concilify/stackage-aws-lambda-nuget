@@ -1,0 +1,69 @@
+{
+	"info": {
+		"_postman_id": "e2c357e4-5b4b-473c-aa85-4f9ae0cea9cd",
+		"name": "Lambda Examples",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Middleware Example",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"foo\": \"bar\"}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:9001/2015-03-31/functions/middleware/invocations",
+					"host": [
+						"localhost"
+					],
+					"port": "9001",
+					"path": [
+						"2015-03-31",
+						"functions",
+						"middleware",
+						"invocations"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Basic Example",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"foo\": \"bar\"}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:9001/2015-03-31/functions/basic/invocations",
+					"host": [
+						"localhost"
+					],
+					"port": "9001",
+					"path": [
+						"2015-03-31",
+						"functions",
+						"basic",
+						"invocations"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

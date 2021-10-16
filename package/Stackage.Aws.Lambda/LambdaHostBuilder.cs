@@ -23,24 +23,21 @@ namespace Stackage.Aws.Lambda
          _builder = builder;
       }
 
-      public void UseStartup<TStartup>() where TStartup : class
+      public void UseStartup<TStartup>() where TStartup : ILambdaStartup<TRequest>
       {
          _builder.ConfigureServices((context, services) =>
          {
             var startup = ActivatorUtilities.CreateInstance<TStartup>(new HostServiceProvider(context));
 
-            if (startup is IConfigureServices servicesConfigurer)
-            {
-               servicesConfigurer.ConfigureServices(services);
-            }
+            startup.ConfigureServices(services);
 
-            if (startup is IConfigurePipeline<TRequest> pipelineConfigurer)
+            services.Configure<LambdaPipelineBuilderOptions<TRequest>>(options =>
             {
-               services.Configure<LambdaPipelineBuilderOptions<TRequest>>(options =>
+               options.ConfigurePipeline = app =>
                {
-                  options.ConfigurePipeline = app => { pipelineConfigurer.Configure(app); };
-               });
-            }
+                  startup.ConfigurePipeline(app);
+               };
+            });
          });
       }
 

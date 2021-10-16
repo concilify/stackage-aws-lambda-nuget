@@ -28,7 +28,7 @@ namespace Stackage.Aws.Lambda
 
          HttpResponseMessage response;
 
-         using (_logger.BeginScope(new Dictionary<string, object> {{"HttpMethod", request.Method}, {"Uri", request.RequestUri}}))
+         using (_logger.BeginScope(new Dictionary<string, object?> {{"HttpMethod", request.Method}, {"Uri", request.RequestUri}}))
          {
             try
             {

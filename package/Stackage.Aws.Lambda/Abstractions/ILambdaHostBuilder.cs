@@ -8,9 +8,9 @@ namespace Stackage.Aws.Lambda.Abstractions
    {
    }
 
-   public interface ILambdaHostBuilder<out TRequest>
+   public interface ILambdaHostBuilder<TRequest>
    {
-      void UseStartup<TStartup>() where TStartup : class;
+      void UseStartup<TStartup>() where TStartup : ILambdaStartup<TRequest>;
 
       void UseSerializer<TSerializer>() where TSerializer : class, ILambdaSerializer;
 

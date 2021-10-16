@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
@@ -24,6 +25,7 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Controllers
 
          Response.Headers.Add("Lambda-Runtime-Aws-Request-Id", awsRequestId);
          Response.Headers.Add("Lambda-Runtime-Invoked-Function-Arn", $"arn:aws:lambda:region-name:account-name:function:{functionName}");
+         Response.Headers.Add("Lambda-Runtime-Deadline-Ms", (DateTimeOffset.UtcNow.AddSeconds(30).ToUnixTimeSeconds() * 1000).ToString());
 
          return Content(body, "application/json", Encoding.UTF8);
       }

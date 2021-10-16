@@ -4,9 +4,11 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Model
 {
    public record LambdaFunction(string Name)
    {
-      public LambdaRequest.Queue Requests { get; } = new LambdaRequest.Queue();
+      public LambdaRequest.Queue QueuedRequests { get; } = new LambdaRequest.Queue();
 
-      public LambdaResponse.Dictionary Responses { get; } = new LambdaResponse.Dictionary();
+      public LambdaRequest.Dictionary InFlightRequests { get; } = new LambdaRequest.Dictionary();
+
+      public LambdaCompletion.Dictionary CompletedRequests { get; } = new LambdaCompletion.Dictionary();
 
       public class Dictionary : ConcurrentDictionary<string, LambdaFunction>
       {

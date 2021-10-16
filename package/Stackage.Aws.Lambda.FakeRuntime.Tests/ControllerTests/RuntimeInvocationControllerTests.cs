@@ -34,8 +34,7 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Tests.ControllerTests
          A.CallTo(() => functionsService.WaitForNextInvocationAsync("my-function", A<CancellationToken>._))
             .Returns(Task.FromResult(new LambdaRequest("aws-request-id", "{\"foo\":\"bar\"}")));
 
-         using var webApplicationFactory = new WebApplicationFactory<FakeRuntimeStartup>()
-            .WithWebHostBuilder(builder => { builder.ConfigureServices(services => { services.AddSingleton(functionsService); }); });
+         using var webApplicationFactory = CreateWebApplicationFactory(functionsService);
          using var httpClient = webApplicationFactory.CreateClient();
 
          var response = await httpClient.GetAsync("/my-function/2018-06-01/runtime/invocation/next");
@@ -56,7 +55,9 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Tests.ControllerTests
       [Test]
       public async Task response_endpoint_returns_okay()
       {
-         using var webApplicationFactory = new WebApplicationFactory<FakeRuntimeStartup>();
+         var functionsService = A.Fake<IFunctionsService>();
+
+         using var webApplicationFactory = CreateWebApplicationFactory(functionsService);
          using var httpClient = webApplicationFactory.CreateClient();
 
          var content = JsonContent.Create(new {bar = "foo"});
@@ -71,14 +72,7 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Tests.ControllerTests
       {
          var functionsService = A.Fake<IFunctionsService>();
 
-         using var webApplicationFactory = new WebApplicationFactory<FakeRuntimeStartup>()
-            .WithWebHostBuilder(builder =>
-            {
-               builder.ConfigureServices(services =>
-               {
-                  services.AddSingleton(functionsService);
-               });
-            });
+         using var webApplicationFactory = CreateWebApplicationFactory(functionsService);
          using var httpClient = webApplicationFactory.CreateClient();
 
          var content = JsonContent.Create(new {bar = "foo"});
@@ -91,7 +85,9 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Tests.ControllerTests
       [Test]
       public async Task error_endpoint_returns_okay()
       {
-         using var webApplicationFactory = new WebApplicationFactory<FakeRuntimeStartup>();
+         var functionsService = A.Fake<IFunctionsService>();
+
+         using var webApplicationFactory = CreateWebApplicationFactory(functionsService);
          using var httpClient = webApplicationFactory.CreateClient();
 
          var content = JsonContent.Create(new {bar = "foo"});
@@ -106,14 +102,7 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Tests.ControllerTests
       {
          var functionsService = A.Fake<IFunctionsService>();
 
-         using var webApplicationFactory = new WebApplicationFactory<FakeRuntimeStartup>()
-            .WithWebHostBuilder(builder =>
-            {
-               builder.ConfigureServices(services =>
-               {
-                  services.AddSingleton(functionsService);
-               });
-            });
+         using var webApplicationFactory = CreateWebApplicationFactory(functionsService);
          using var httpClient = webApplicationFactory.CreateClient();
 
          var content = JsonContent.Create(new {bar = "foo"});
@@ -121,6 +110,18 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Tests.ControllerTests
          await httpClient.PostAsync("/my-function/2018-06-01/runtime/invocation/my-request-id/error", content);
 
          A.CallTo(() => functionsService.InvocationError("my-function", "my-request-id", "{\"bar\":\"foo\"}")).MustHaveHappenedOnceExactly();
+      }
+
+      private static WebApplicationFactory<FakeRuntimeStartup> CreateWebApplicationFactory(IFunctionsService functionsService)
+      {
+         return new WebApplicationFactory<FakeRuntimeStartup>()
+            .WithWebHostBuilder(builder =>
+            {
+               builder.ConfigureServices(services =>
+               {
+                  services.AddSingleton(functionsService);
+               });
+            });
       }
    }
 }
