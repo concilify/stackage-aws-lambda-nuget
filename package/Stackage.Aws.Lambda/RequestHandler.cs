@@ -42,7 +42,7 @@ namespace Stackage.Aws.Lambda
          using var requestAborted = new CancellationTokenSource(effectiveRemainingTimeMs);
          using var scope = _serviceProvider.CreateScope();
 
-         var wrappedContext = new DefaultLambdaContext(scope.ServiceProvider, requestAborted.Token, context);
+         var wrapperContext = new DefaultLambdaContext(scope.ServiceProvider, requestAborted.Token, context);
 
          ILambdaResult lambdaResult;
 
@@ -52,15 +52,14 @@ namespace Stackage.Aws.Lambda
 
             lambdaResult = await pipelineAsync(
                _parser.Parse(requestStream),
-               wrappedContext
-            );
+               wrapperContext);
          }
          catch (OperationCanceledException) when (requestAborted.IsCancellationRequested)
          {
-            lambdaResult = _resultFactory.RemainingTimeExpired(wrappedContext);
+            lambdaResult = _resultFactory.RemainingTimeExpired();
          }
 
-         return lambdaResult.SerializeResult(_serializer);
+         return lambdaResult.SerializeResult(_serializer, wrapperContext);
       }
    }
 }

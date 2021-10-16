@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Threading;
 using System.Threading.Tasks;
 using Amazon.Lambda.Core;
 using Amazon.Lambda.Serialization.SystemTextJson;
@@ -75,7 +74,7 @@ namespace Stackage.Aws.Lambda.Tests
       [TestCase(50, 49)]
       [TestCase(50, 1)]
       [TestCase(50, -1)]
-      public async Task handler_is_cancelled_almost_immediately_with_499_when_remaining_time_is_less_than_or_equal_to_shutdown_timeout(
+      public async Task handler_is_cancelled_almost_immediately_when_remaining_time_is_less_than_or_equal_to_shutdown_timeout(
          int shutdownMs,
          int remainingMs)
       {

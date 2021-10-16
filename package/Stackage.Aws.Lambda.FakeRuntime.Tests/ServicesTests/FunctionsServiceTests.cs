@@ -6,7 +6,6 @@ using FakeItEasy;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NUnit.Framework;
-using Serilog;
 using Stackage.Aws.Lambda.FakeRuntime.Model;
 using Stackage.Aws.Lambda.FakeRuntime.Services;
 using Stackage.Aws.Lambda.FakeRuntime.Tests.Stubs;

@@ -1,7 +1,6 @@
 using Lambda.Middleware.Example.Integrations;
 using Lambda.Middleware.Example.Middleware;
 using Lambda.Middleware.Example.Model;
-using Lambda.Middleware.Example.Results;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Stackage.Aws.Lambda.Abstractions;

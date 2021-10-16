@@ -10,9 +10,9 @@ namespace Stackage.Aws.Lambda.Tests.Fakes
       {
          var context = A.Fake<ILambdaResultFactory>();
 
-         A.CallTo(() => context.RemainingTimeExpired(A<LambdaContext>._)).Returns(new StringResult(message));
+         A.CallTo(() => context.RemainingTimeExpired()).Returns(new StringResult(message));
 
          return context;
-      } 
+      }
    }
 }

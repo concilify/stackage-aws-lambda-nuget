@@ -14,7 +14,7 @@ namespace Stackage.Aws.Lambda.Results
          _stream = stream ?? throw new ArgumentNullException(nameof(stream));
       }
 
-      public Stream SerializeResult(ILambdaSerializer serializer)
+      public Stream SerializeResult(ILambdaSerializer serializer, LambdaContext context)
       {
          return _stream;
       }

@@ -13,7 +13,7 @@ namespace Stackage.Aws.Lambda.Results
          _content = content;
       }
 
-      public Stream SerializeResult(ILambdaSerializer serializer)
+      public Stream SerializeResult(ILambdaSerializer serializer, LambdaContext context)
       {
          var responseStream = new MemoryStream();
 
@@ -24,3 +24,4 @@ namespace Stackage.Aws.Lambda.Results
       }
    }
 }
+

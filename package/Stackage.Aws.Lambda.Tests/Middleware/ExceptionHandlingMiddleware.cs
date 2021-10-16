@@ -32,7 +32,7 @@ namespace Stackage.Aws.Lambda.Tests.Middleware
             _message = message;
          }
 
-         public Stream SerializeResult(ILambdaSerializer serializer)
+         public Stream SerializeResult(ILambdaSerializer serializer, LambdaContext context)
          {
             return $"An error occurred - {_message}".ToStream();
          }

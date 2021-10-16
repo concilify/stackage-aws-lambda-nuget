@@ -5,6 +5,6 @@ namespace Stackage.Aws.Lambda.Abstractions
 {
    public interface ILambdaResult
    {
-      Stream SerializeResult(ILambdaSerializer serializer);
+      Stream SerializeResult(ILambdaSerializer serializer, LambdaContext context);
    }
 }

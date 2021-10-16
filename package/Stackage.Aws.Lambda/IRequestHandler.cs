@@ -1,5 +1,4 @@
 using System.IO;
-using System.Threading;
 using System.Threading.Tasks;
 using Amazon.Lambda.Core;
 using Stackage.Aws.Lambda.Abstractions;
