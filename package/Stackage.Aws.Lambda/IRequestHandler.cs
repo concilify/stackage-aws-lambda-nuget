@@ -7,6 +7,9 @@ namespace Stackage.Aws.Lambda
 {
    public interface IRequestHandler<out TRequest>
    {
-      Task<Stream> HandleAsync(Stream requestStream, ILambdaContext context, PipelineDelegate<TRequest> pipelineAsync);
+      Task<Stream> HandleAsync(
+         Stream requestStream,
+         ILambdaContext context,
+         PipelineDelegate<TRequest> pipelineAsync);
    }
 }

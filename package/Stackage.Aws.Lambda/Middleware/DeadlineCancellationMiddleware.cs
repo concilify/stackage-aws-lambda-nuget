@@ -27,7 +27,10 @@ namespace Stackage.Aws.Lambda.Middleware
          _logger = logger;
       }
 
-      public async Task<ILambdaResult> InvokeAsync(TRequest request, LambdaContext context, PipelineDelegate<TRequest> next)
+      public async Task<ILambdaResult> InvokeAsync(
+         TRequest request,
+         LambdaContext context,
+         PipelineDelegate<TRequest> next)
       {
          var effectiveRemainingTimeMs = Math.Max((int) context.RemainingTime.Subtract(_hostOptions.ShutdownTimeout).TotalMilliseconds, 0);
 
