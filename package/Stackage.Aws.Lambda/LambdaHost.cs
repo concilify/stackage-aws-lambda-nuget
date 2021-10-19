@@ -9,7 +9,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Stackage.Aws.Lambda.Abstractions;
 using Stackage.Aws.Lambda.Extensions;
-using Stackage.Aws.Lambda.Results;
 
 namespace Stackage.Aws.Lambda
 {
@@ -47,7 +46,6 @@ namespace Stackage.Aws.Lambda
                services.AddSingleton<IRuntimeApiClient>(CreateRuntimeApiClient);
                services.AddSingleton<IRequestHandler<TRequest>, RequestHandler<TRequest>>();
                services.AddSingleton<IRequestParser<TRequest>, TParser>();
-               services.AddSingleton<ILambdaResultFactory, DefaultLambdaResultFactory>();
 
                // TODO: Lambda fails after 3 seconds when using this
                // services.AddHttpClient<RuntimeApiClient>(ConfigureRuntimeHttpClient);

@@ -21,6 +21,7 @@ namespace Stackage.Aws.Lambda.Tests.Scenarios
                builder.UseStartup<StartupWithExceptionHandling<Stream>>();
                builder.UseHandler<ThrowingStreamLambdaHandler>();
             },
+            null,
             "my-function",
             new LambdaRequest("req-id", "AnyString"));
          _responses = functions.Single().Value.CompletedRequests;

@@ -23,35 +23,42 @@ namespace Stackage.Aws.Lambda.Tests
       private const string RuntimeApiHostAndPort = "localhost:9001";
 
       public static async Task<LambdaFunction.Dictionary> RunAsync(
-         Action<ILambdaHostBuilder> configure,
+         Action<ILambdaHostBuilder> configureLambdaHost,
+         Action<IConfigurationBuilder> configureConfiguration,
          string functionName,
          params LambdaRequest[] invokeRequests)
       {
-         return await RunAsync<Stream>(LambdaHost.Create(builder =>
+         return await RunAsync<Stream>(
+            LambdaHost.Create(builder =>
             {
                builder.UseSerializer<CamelCaseLambdaJsonSerializer>();
-               configure(builder);
+               configureLambdaHost(builder);
             }),
+            configureConfiguration,
             functionName,
             invokeRequests);
       }
 
       public static async Task<LambdaFunction.Dictionary> RunAsync<TRequest>(
-         Action<ILambdaHostBuilder<TRequest>> configure,
+         Action<ILambdaHostBuilder<TRequest>> configureLambdaHost,
+         Action<IConfigurationBuilder> configureConfiguration,
          string functionName,
          params LambdaRequest[] invokeRequests)
       {
-         return await RunAsync<TRequest>(LambdaHost.Create<TRequest>(builder =>
+         return await RunAsync<TRequest>(
+            LambdaHost.Create<TRequest>(builder =>
             {
                builder.UseSerializer<CamelCaseLambdaJsonSerializer>();
-               configure(builder);
+               configureLambdaHost(builder);
             }),
+            configureConfiguration,
             functionName,
             invokeRequests);
       }
 
       private static async Task<LambdaFunction.Dictionary> RunAsync<TRequest>(
          IHostBuilder builder,
+         Action<IConfigurationBuilder> configureConfiguration,
          string functionName,
          params LambdaRequest[] invokeRequests)
       {
@@ -66,6 +73,7 @@ namespace Stackage.Aws.Lambda.Tests
                {
                   {"KESTREL:ENDPOINTS:HTTP:URL", $"http://{RuntimeApiHostAndPort}"}
                });
+               configureConfiguration?.Invoke(configurationBuilder);
             })
             .UseSerilog((_, configuration) =>
             {
@@ -75,10 +83,7 @@ namespace Stackage.Aws.Lambda.Tests
             .ConfigureServices(services =>
             {
                services.Decorate<ILambdaListener<TRequest>, DelayedStartLambdaListener<TRequest>>();
-               services.Configure<HostOptions>(options =>
-               {
-                  options.ShutdownTimeout = TimeSpan.FromMilliseconds(10);
-               });
+               services.Configure<HostOptions>(options => { options.ShutdownTimeout = TimeSpan.FromMilliseconds(10); });
             })
             .ConfigureWebHostDefaults(webHostBuilder =>
             {
@@ -117,7 +122,7 @@ namespace Stackage.Aws.Lambda.Tests
 
          public async Task ListenAsync(CancellationToken cancellationToken)
          {
-            using var httpClient = new HttpClient { BaseAddress = new Uri($"http://{RuntimeApiHostAndPort}")};
+            using var httpClient = new HttpClient {BaseAddress = new Uri($"http://{RuntimeApiHostAndPort}")};
 
             for (var i = 0; i < 30; i++)
             {

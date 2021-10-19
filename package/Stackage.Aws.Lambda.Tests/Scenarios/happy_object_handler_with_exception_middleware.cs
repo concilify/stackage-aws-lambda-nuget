@@ -21,6 +21,7 @@ namespace Stackage.Aws.Lambda.Tests.Scenarios
                builder.UseStartup<StartupWithExceptionHandling<StringPoco>>();
                builder.UseHandler<DecorateObjectLambdaHandler, StringPoco>();
             },
+            null,
             "my-function",
             new LambdaRequest("req-id", "{\"value\":\"AnyString\"}"));
          _responses = functions.Single().Value.CompletedRequests;

@@ -3,6 +3,7 @@ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using Stackage.Aws.Lambda.FakeRuntime.Services;
 
 namespace Stackage.Aws.Lambda.FakeRuntime.Controllers
@@ -12,10 +13,14 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Controllers
    public class RuntimeInvocationController : ControllerBase
    {
       private readonly IFunctionsService _functionsService;
+      private readonly IConfiguration _configuration;
 
-      public RuntimeInvocationController(IFunctionsService functionsService)
+      public RuntimeInvocationController(
+         IFunctionsService functionsService,
+         IConfiguration configuration)
       {
          _functionsService = functionsService;
+         _configuration = configuration;
       }
 
       [HttpGet("next")]
@@ -25,7 +30,7 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Controllers
 
          Response.Headers.Add("Lambda-Runtime-Aws-Request-Id", awsRequestId);
          Response.Headers.Add("Lambda-Runtime-Invoked-Function-Arn", $"arn:aws:lambda:region-name:account-name:function:{functionName}");
-         Response.Headers.Add("Lambda-Runtime-Deadline-Ms", (DateTimeOffset.UtcNow.AddSeconds(30).ToUnixTimeSeconds() * 1000).ToString());
+         Response.Headers.Add("Lambda-Runtime-Deadline-Ms", (GetDeadline().ToUnixTimeSeconds() * 1000).ToString());
 
          return Content(body, "application/json", Encoding.UTF8);
       }
@@ -50,6 +55,16 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Controllers
          }
 
          return Ok();
+      }
+
+      private DateTimeOffset GetDeadline()
+      {
+         if (!int.TryParse(_configuration["TimeoutSeconds"], out var timeoutSeconds))
+         {
+            timeoutSeconds = 30;
+         }
+
+         return DateTimeOffset.UtcNow.AddSeconds(timeoutSeconds);
       }
    }
 }

@@ -1,5 +1,4 @@
 using System;
-using System.Threading;
 using Amazon.Lambda.Core;
 using Stackage.Aws.Lambda.Abstractions;
 
@@ -9,16 +8,13 @@ namespace Stackage.Aws.Lambda
    {
       private readonly ILambdaContext _context;
 
-      public DefaultLambdaContext(IServiceProvider requestServices, CancellationToken requestAborted, ILambdaContext context)
+      public DefaultLambdaContext(IServiceProvider requestServices, ILambdaContext context)
       {
          RequestServices = requestServices;
-         RequestAborted = requestAborted;
          _context = context;
       }
 
       public override IServiceProvider RequestServices { get; }
-
-      public override CancellationToken RequestAborted { get; }
 
       public override string AwsRequestId => _context.AwsRequestId;
 
