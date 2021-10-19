@@ -24,10 +24,7 @@
     <PackageReference Include="Serilog.Extensions.Hosting" Version="4.1.2" />
     <PackageReference Include="Serilog.Settings.Configuration" Version="3.3.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="4.0.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\package\Stackage.Aws.Lambda\Stackage.Aws.Lambda.csproj" />
+    <PackageReference Include="Stackage.Aws.Lambda" Version="0.2.0" />
   </ItemGroup>
 
 </Project>
