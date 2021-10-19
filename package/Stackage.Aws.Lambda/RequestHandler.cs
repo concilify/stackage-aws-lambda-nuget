@@ -23,12 +23,12 @@ namespace Stackage.Aws.Lambda
          _serializer = serializer;
       }
 
-      public async Task<Stream> HandleAsync(Stream requestStream, ILambdaContext context, PipelineDelegate<TRequest> pipelineAsync)
+      public async Task<Stream> HandleAsync(
+         Stream requestStream,
+         ILambdaContext context,
+         PipelineDelegate<TRequest> pipelineAsync)
       {
          using var scope = _serviceProvider.CreateScope();
-
-         // TODO: Create cancellation token from context.RemainingTime
-         // TODO: Combine with cancellation token passed in
 
          var wrapperContext = new DefaultLambdaContext(scope.ServiceProvider, context);
 

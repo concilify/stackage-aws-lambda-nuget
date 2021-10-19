@@ -21,6 +21,7 @@ namespace Lambda.Middleware.Example
       public void ConfigureServices(IServiceCollection services)
       {
          services.AddSingleton<ILambdaResultFactory, HttpLambdaResultFactory>();
+         services.AddDeadlineCancellation();
 
          // TODO: Create correlationId type service
       }
@@ -29,6 +30,7 @@ namespace Lambda.Middleware.Example
       {
          pipelineBuilder.Use<RequestLoggingMiddleware<InputPoco>, InputPoco>();
          pipelineBuilder.Use<ExceptionHandlingMiddleware<InputPoco>, InputPoco>();
+         pipelineBuilder.Use<DeadlineCancellationMiddleware<InputPoco>, InputPoco>();
       }
    }
 }

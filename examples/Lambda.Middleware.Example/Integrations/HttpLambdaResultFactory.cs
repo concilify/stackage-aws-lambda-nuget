@@ -9,5 +9,10 @@ namespace Lambda.Middleware.Example.Integrations
       {
          return new HttpErrorResult(500, "Internal Server Error");
       }
+
+      public ILambdaResult RemainingTimeExpired()
+      {
+         return new HttpErrorResult(499, "Client Closed Request");
+      }
    }
 }

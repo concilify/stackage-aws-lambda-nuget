@@ -6,6 +6,7 @@ using FakeItEasy;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 using Stackage.Aws.Lambda.Abstractions;
+using Stackage.Aws.Lambda.Tests.Fakes;
 using Stackage.Aws.Lambda.Tests.Model;
 
 namespace Stackage.Aws.Lambda.Tests
@@ -30,8 +31,8 @@ namespace Stackage.Aws.Lambda.Tests
             return Task.FromResult(A.Fake<ILambdaResult>());
          }
 
-         await handler.HandleAsync(new MemoryStream(), A.Fake<ILambdaContext>(), ResolveWithinScopeTwice);
-         await handler.HandleAsync(new MemoryStream(), A.Fake<ILambdaContext>(), ResolveWithinScopeTwice);
+         await handler.HandleAsync(new MemoryStream(), LambdaContextFake.Valid(), ResolveWithinScopeTwice);
+         await handler.HandleAsync(new MemoryStream(), LambdaContextFake.Valid(), ResolveWithinScopeTwice);
 
          // Resolutions within same request are same
          Assert.That(resolvedContracts[1], Is.SameAs(resolvedContracts[0]));

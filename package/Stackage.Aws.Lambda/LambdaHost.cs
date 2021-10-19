@@ -9,7 +9,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Stackage.Aws.Lambda.Abstractions;
 using Stackage.Aws.Lambda.Extensions;
-using Stackage.Aws.Lambda.Results;
 
 namespace Stackage.Aws.Lambda
 {
@@ -39,15 +38,17 @@ namespace Stackage.Aws.Lambda
          where TParser : class, IRequestParser<TRequest>
       {
          return hostBuilder
-            .ConfigureServices(services =>
+            .ConfigureServices((context, services) =>
             {
+               services.Configure<HostOptions>(context.Configuration.GetSection("HostOptions"));
+
                services.AddHostedService<LambdaListenerHostedService<TRequest>>();
+
                services.AddSingleton<ILambdaListener<TRequest>, LambdaListener<TRequest>>();
                services.AddSingleton<ILambdaPipelineBuilder<TRequest>, LambdaPipelineBuilder<TRequest>>();
                services.AddSingleton<IRuntimeApiClient>(CreateRuntimeApiClient);
                services.AddSingleton<IRequestHandler<TRequest>, RequestHandler<TRequest>>();
                services.AddSingleton<IRequestParser<TRequest>, TParser>();
-               services.AddSingleton<ILambdaResultFactory, DefaultLambdaResultFactory>();
 
                // TODO: Lambda fails after 3 seconds when using this
                // services.AddHttpClient<RuntimeApiClient>(ConfigureRuntimeHttpClient);

@@ -9,5 +9,10 @@ namespace Stackage.Aws.Lambda.Results
       {
          return new StringResult("Internal Server Error");
       }
+
+      public ILambdaResult RemainingTimeExpired()
+      {
+         return new StringResult("Client Closed Request");
+      }
    }
 }

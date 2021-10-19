@@ -3,6 +3,7 @@ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using Stackage.Aws.Lambda.FakeRuntime.Services;
 
 namespace Stackage.Aws.Lambda.FakeRuntime.Controllers
@@ -11,10 +12,14 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Controllers
    [Route("{functionName}/2018-06-01/runtime/invocation")]
    public class RuntimeInvocationController : ControllerBase
    {
+      private readonly FakeRuntimeOptions _options;
       private readonly IFunctionsService _functionsService;
 
-      public RuntimeInvocationController(IFunctionsService functionsService)
+      public RuntimeInvocationController(
+         IOptions<FakeRuntimeOptions> options,
+         IFunctionsService functionsService)
       {
+         _options = options.Value;
          _functionsService = functionsService;
       }
 
@@ -25,7 +30,7 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Controllers
 
          Response.Headers.Add("Lambda-Runtime-Aws-Request-Id", awsRequestId);
          Response.Headers.Add("Lambda-Runtime-Invoked-Function-Arn", $"arn:aws:lambda:region-name:account-name:function:{functionName}");
-         Response.Headers.Add("Lambda-Runtime-Deadline-Ms", (DateTimeOffset.UtcNow.AddSeconds(30).ToUnixTimeSeconds() * 1000).ToString());
+         Response.Headers.Add("Lambda-Runtime-Deadline-Ms", (DateTimeOffset.UtcNow.Add(_options.DeadlineTimeout).ToUnixTimeSeconds() * 1000).ToString());
 
          return Content(body, "application/json", Encoding.UTF8);
       }

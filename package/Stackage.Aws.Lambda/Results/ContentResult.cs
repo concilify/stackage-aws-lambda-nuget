@@ -24,3 +24,4 @@ namespace Stackage.Aws.Lambda.Results
       }
    }
 }
+

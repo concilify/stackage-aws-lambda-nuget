@@ -7,8 +7,6 @@ namespace Stackage.Aws.Lambda.Abstractions
    {
       public abstract IServiceProvider RequestServices { get; }
 
-      // TODO: CancellationToken
-
       public abstract string AwsRequestId { get; }
 
       public abstract IClientContext ClientContext { get; }

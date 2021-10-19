@@ -10,7 +10,6 @@ using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 using Stackage.Aws.Lambda.FakeRuntime.Model;
 using Stackage.Aws.Lambda.FakeRuntime.Services;
-using Stackage.Aws.Lambda.FakeRuntime.Tests.Stubs;
 
 namespace Stackage.Aws.Lambda.FakeRuntime.Tests.ControllerTests.FunctionsControllerScenarios
 {

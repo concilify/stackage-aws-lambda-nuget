@@ -16,8 +16,6 @@ namespace Stackage.Aws.Lambda
 
       public override IServiceProvider RequestServices { get; }
 
-      // TODO: CancellationToken
-
       public override string AwsRequestId => _context.AwsRequestId;
 
       public override IClientContext ClientContext => _context.ClientContext;
