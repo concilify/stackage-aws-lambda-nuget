@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using Stackage.Aws.Lambda.Abstractions;
-using Stackage.Aws.Lambda.Middleware;
 using Stackage.Aws.Lambda.Results;
 using Stackage.Aws.Lambda.Tests.Model;
 

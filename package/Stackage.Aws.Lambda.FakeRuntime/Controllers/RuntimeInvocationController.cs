@@ -3,7 +3,7 @@ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Stackage.Aws.Lambda.FakeRuntime.Services;
 
 namespace Stackage.Aws.Lambda.FakeRuntime.Controllers
@@ -12,15 +12,15 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Controllers
    [Route("{functionName}/2018-06-01/runtime/invocation")]
    public class RuntimeInvocationController : ControllerBase
    {
+      private readonly FakeRuntimeOptions _options;
       private readonly IFunctionsService _functionsService;
-      private readonly IConfiguration _configuration;
 
       public RuntimeInvocationController(
-         IFunctionsService functionsService,
-         IConfiguration configuration)
+         IOptions<FakeRuntimeOptions> options,
+         IFunctionsService functionsService)
       {
+         _options = options.Value;
          _functionsService = functionsService;
-         _configuration = configuration;
       }
 
       [HttpGet("next")]
@@ -30,7 +30,7 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Controllers
 
          Response.Headers.Add("Lambda-Runtime-Aws-Request-Id", awsRequestId);
          Response.Headers.Add("Lambda-Runtime-Invoked-Function-Arn", $"arn:aws:lambda:region-name:account-name:function:{functionName}");
-         Response.Headers.Add("Lambda-Runtime-Deadline-Ms", (GetDeadline().ToUnixTimeSeconds() * 1000).ToString());
+         Response.Headers.Add("Lambda-Runtime-Deadline-Ms", (DateTimeOffset.UtcNow.Add(_options.DeadlineTimeout).ToUnixTimeSeconds() * 1000).ToString());
 
          return Content(body, "application/json", Encoding.UTF8);
       }
@@ -55,16 +55,6 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Controllers
          }
 
          return Ok();
-      }
-
-      private DateTimeOffset GetDeadline()
-      {
-         if (!int.TryParse(_configuration["TimeoutSeconds"], out var timeoutSeconds))
-         {
-            timeoutSeconds = 30;
-         }
-
-         return DateTimeOffset.UtcNow.AddSeconds(timeoutSeconds);
       }
    }
 }

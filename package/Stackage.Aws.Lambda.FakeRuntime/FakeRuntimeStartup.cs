@@ -23,6 +23,9 @@ namespace Stackage.Aws.Lambda.FakeRuntime
       public void ConfigureServices(IServiceCollection services)
       {
          services.AddDefaultServices(_configuration);
+
+         services.Configure<FakeRuntimeOptions>(_configuration.GetSection("FakeRuntimeOptions"));
+
          services.AddTransient<IJsonSerialiser, SystemTextJsonSerialiser>();
          services.AddTransient<IMetricSink, LoggingMetricSink>();
 

@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Lambda.Middleware.Example.Integrations;
 using Lambda.Middleware.Example.Model;
 using Stackage.Aws.Lambda.Abstractions;
-using Stackage.Aws.Lambda.Middleware;
 
 namespace Lambda.Middleware.Example.Handler
 {

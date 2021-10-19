@@ -1,5 +1,4 @@
 using System;
-using Amazon.Lambda.Core;
 using FakeItEasy;
 using Stackage.Aws.Lambda.Abstractions;
 

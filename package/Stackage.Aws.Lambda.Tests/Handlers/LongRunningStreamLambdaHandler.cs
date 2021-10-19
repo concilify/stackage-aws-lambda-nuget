@@ -1,7 +1,6 @@
 using System.IO;
 using System.Threading.Tasks;
 using Stackage.Aws.Lambda.Abstractions;
-using Stackage.Aws.Lambda.Middleware;
 using Stackage.Aws.Lambda.Results;
 
 namespace Stackage.Aws.Lambda.Tests.Handlers

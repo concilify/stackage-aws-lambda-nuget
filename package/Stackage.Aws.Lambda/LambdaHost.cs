@@ -38,9 +38,12 @@ namespace Stackage.Aws.Lambda
          where TParser : class, IRequestParser<TRequest>
       {
          return hostBuilder
-            .ConfigureServices(services =>
+            .ConfigureServices((context, services) =>
             {
+               services.Configure<HostOptions>(context.Configuration.GetSection("HostOptions"));
+
                services.AddHostedService<LambdaListenerHostedService<TRequest>>();
+
                services.AddSingleton<ILambdaListener<TRequest>, LambdaListener<TRequest>>();
                services.AddSingleton<ILambdaPipelineBuilder<TRequest>, LambdaPipelineBuilder<TRequest>>();
                services.AddSingleton<IRuntimeApiClient>(CreateRuntimeApiClient);
