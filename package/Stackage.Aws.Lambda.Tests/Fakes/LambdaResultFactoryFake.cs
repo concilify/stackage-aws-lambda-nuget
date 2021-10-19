@@ -1,18 +1,27 @@
+using System;
 using FakeItEasy;
 using Stackage.Aws.Lambda.Abstractions;
-using Stackage.Aws.Lambda.Results;
 
 namespace Stackage.Aws.Lambda.Tests.Fakes
 {
    public static class LambdaResultFactoryFake
    {
-      public static ILambdaResultFactory WithRemainingTimeExpiredResult(string message)
+      public static ILambdaResultFactory WithUnhandledExceptionResult(Exception exception, ILambdaResult result)
       {
-         var context = A.Fake<ILambdaResultFactory>();
+         var resultFactory = A.Fake<ILambdaResultFactory>();
 
-         A.CallTo(() => context.RemainingTimeExpired()).Returns(new StringResult(message));
+         A.CallTo(() => resultFactory.UnhandledException(exception)).Returns(result);
 
-         return context;
+         return resultFactory;
+      }
+
+      public static ILambdaResultFactory WithRemainingTimeExpiredResult(ILambdaResult result)
+      {
+         var resultFactory = A.Fake<ILambdaResultFactory>();
+
+         A.CallTo(() => resultFactory.RemainingTimeExpired()).Returns(result);
+
+         return resultFactory;
       }
    }
 }
