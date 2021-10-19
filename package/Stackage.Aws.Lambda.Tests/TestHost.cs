@@ -83,7 +83,10 @@ namespace Stackage.Aws.Lambda.Tests
             .ConfigureServices(services =>
             {
                services.Decorate<ILambdaListener<TRequest>, DelayedStartLambdaListener<TRequest>>();
-               services.Configure<HostOptions>(options => { options.ShutdownTimeout = TimeSpan.FromMilliseconds(10); });
+               services.Configure<HostOptions>(options =>
+               {
+                  options.ShutdownTimeout = TimeSpan.FromMilliseconds(10);
+               });
             })
             .ConfigureWebHostDefaults(webHostBuilder =>
             {
