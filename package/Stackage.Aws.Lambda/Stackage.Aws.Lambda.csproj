@@ -2,7 +2,21 @@
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
+    <LangVersion>9.0</LangVersion>
     <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <Product>Stackage</Product>
+    <Title>Stackage.Aws.Lambda</Title>
+    <Description>Custom runtime with .NET Generic Host bootstrap</Description>
+    <Authors>Andrew Craven</Authors>
+    <Version>0.0.0</Version>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackageId>Stackage.Aws.Lambda</PackageId>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/concilify/stackage-aws-lambda-nuget</RepositoryUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
   <ItemGroup>
