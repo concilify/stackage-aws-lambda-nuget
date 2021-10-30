@@ -1,28 +1,34 @@
 # stackage-aws-lambda-nuget
 
-## Fake Runtime
+## Fake Runtime API
 
 ### Installation
 
-To enable debugging lambda functions that use the custom runtime install the fake runtime package as a global tool. To use a pre-release package you will need to specify the version.
+To enable debugging lambda functions that use the custom runtime install the Fake Runtime API package as a global tool. To use a pre-release package you will need to specify the version.
 
 `dotnet tool install --global Stackage.Aws.Lambda.FakeRuntime [--version {VERSION}]`
 
 ### Starting up
 
-With the fake runtime installed, run `fake-lambda-runtime` in a console to start it up.
+With the Fake Runtime API installed, run `fake-lambda-runtime` in a console to start it up.
 
-Alternatively, if you have cloned this repository, you can build and run the fake runtime using the Powershell script `run-fake-runtime.ps1`. In which case you need not install the global tool.
+Alternatively, if you have cloned this repository, you can build and run the Fake Runtime API using the Powershell script `run-fake-runtime.ps1`. In which case you need not install the global tool.
+
+## Lambda Template
+
+### Installation
+
+TODO
 
 ## Examples
 
 ### Debugging
 
-The two examples lambda functions are both .NET console apps so can be easily be started in debug mode in your favourite IDE, remembering to start up the fake runtime.
+The two examples lambda functions are both .NET console apps so can be easily be started in debug mode in your favourite IDE, remembering to start up the Fake Runtime API.
 
-The `launchsettings.json` in the examples overrides the `AWS_LAMBDA_RUNTIME_API` environment variable. This follows the pattern `localhost:9001/{FUNCTION_NAME}` which allows the fake runtime to support multiple lambda functions.
+The `launchsettings.json` in the examples overrides the `AWS_LAMBDA_RUNTIME_API` environment variable. This follows the pattern `localhost:9001/{FUNCTION_NAME}` which allows the Fake Runtime API to support multiple lambda functions.
 
-When the lambda function runs it connects to the fake runtime and waits for invocations.
+When the lambda function runs it connects to the Fake Runtime API and waits for invocations.
 
 The lambda function can be invoked using one of the following methods:
 
@@ -62,7 +68,7 @@ These can then be deployed using the AWS Console as described in [Creating Lambd
 
 ### Prerequisites
 
-A secret named `NUGET_PUSH_TOKEN` containing a NuGet API key must have been added in order for GitHub Actions to be able to push NuGet packages
+A secret named `STACKAGE_NUGET_PUSH_TOKEN` containing a NuGet API key must have been added in order for GitHub Actions to be able to push NuGet packages
 
 ### Releasing
 
@@ -70,13 +76,15 @@ Tag the commit in the `main` branch that you wish to release with format `v*.*.*
 
 ## Developing Locally
 
-It's possible to build and install the tool locally without having to push to the NuGet repository.
+It's possible to build and install the tools locally without having to push to the NuGet repository.
+
+## Fake Runtime API
 
 You will need to uninstall the package if it's already installed.
 
 `dotnet tool uninstall --global Stackage.Aws.Lambda.FakeRuntime`
 
-From the root of the repository, build the fake runtime package.
+From the root of the repository, build the Fake Runtime API package.
 
 `dotnet pack .\package\Stackage.Aws.Lambda.FakeRuntime -o .`
 
@@ -87,3 +95,9 @@ From the same directory, install the package.
 Finally, run the tool.
 
 `fake-lambda-runtime`
+
+## Lambda Template
+
+Install the template directly from this repository - there is no need to uninstall any previously installed version.
+
+`dotnet new --install  .\package\Stackage.Aws.Lambda.DotNetNew.Templates\content`

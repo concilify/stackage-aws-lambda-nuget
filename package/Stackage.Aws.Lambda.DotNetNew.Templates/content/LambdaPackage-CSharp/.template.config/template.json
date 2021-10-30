@@ -6,8 +6,6 @@
     "Stackage",
     "AWS",
     "Lambda",
-    "Custom",
-    "Runtime",
     "Package"
   ],
   "generatorVersions": "[1.0.0.0-*)",
