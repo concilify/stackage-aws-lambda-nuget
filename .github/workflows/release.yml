@@ -8,7 +8,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 5
     env:
       DOTNET_NOLOGO: true
     steps:
@@ -25,6 +25,13 @@ jobs:
         dotnet pack --configuration Release -p:Version=${VERSION} --output .
     - name: Test
       run: dotnet test --configuration Release -p:Version=${VERSION}
+    - name: Install Lambda Template
+      run: dotnet new --install Stackage.Aws.Lambda.DotNetNew.Templates --nuget-source .
+    - name: Use Lambda Template
+      run: dotnet new slm --name Lambda.Function
+    - name: Build Generated Lambda
+      working-directory: ./Lambda.Function
+      run: build.ps1
     - name: Push
       run: dotnet nuget push Stackage.*.${VERSION}.nupkg --source https://api.nuget.org/v3/index.json --api-key ${NUGET_API_KEY}
       env:

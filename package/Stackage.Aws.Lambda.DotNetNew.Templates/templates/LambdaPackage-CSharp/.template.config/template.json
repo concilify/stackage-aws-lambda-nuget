@@ -27,6 +27,17 @@
     "70482D06-323A-41F3-BA06-5DC2FA7A201D",
     "13C6F8A7-29C8-4631-922C-8444C97847EA"
   ],
+  "sources": [
+    {
+      "modifiers": [
+        {
+          "rename": {
+            "build.ps1_": "build.ps1"
+          }
+        }
+      ]
+    }
+  ],
   "symbols": {
     "HostIdentifier": {
       "type": "bind",

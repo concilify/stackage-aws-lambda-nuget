@@ -14,6 +14,8 @@
 
   <PropertyGroup>
     <PackageId>Stackage.Aws.Lambda</PackageId>
+    <PackageType>Dependency</PackageType>
+    <PackageTags>aws;lambda;custom;runtime</PackageTags>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/concilify/stackage-aws-lambda-nuget</RepositoryUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
