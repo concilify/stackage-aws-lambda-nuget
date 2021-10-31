@@ -22,7 +22,7 @@ jobs:
     - name: Test
       run: dotnet test --configuration Release
     - name: Install Lambda Template
-      run: dotnet new --install Stackage.Aws.Lambda.DotNetNew.Templates --nuget-source .
+      run: dotnet new --install ./Stackage.Aws.Lambda.DotNetNew.Templates.0.0.0-ci.nupkg
     - name: Use Lambda Template
       run: dotnet new slm --name Lambda.Function
     - name: Build Generated Lambda
