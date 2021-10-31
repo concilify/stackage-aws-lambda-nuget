@@ -32,7 +32,7 @@ jobs:
     - name: Build Generated Lambda
       working-directory: ./Lambda.Function
       shell: pwsh
-      run: build.ps1
+      run: ./build.ps1
     - name: Push
       run: dotnet nuget push Stackage.*.${VERSION}.nupkg --source https://api.nuget.org/v3/index.json --api-key ${NUGET_API_KEY}
       env:
