@@ -27,4 +27,5 @@ jobs:
       run: dotnet new slm --name Lambda.Function
     - name: Build Generated Lambda
       working-directory: ./Lambda.Function
+      shell: pwsh
       run: build.ps1
