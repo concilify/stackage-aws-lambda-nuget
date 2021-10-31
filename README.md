@@ -4,7 +4,7 @@
 
 ### Installation
 
-To enable debugging lambda functions that use the custom runtime install the Fake Runtime API package as a global tool. To use a pre-release package you will need to specify the version.
+To enable debugging lambda functions that use the custom runtime, install the Fake Runtime API package as a global tool. To use a pre-release package you will need to specify the version.
 
 `dotnet tool install --global Stackage.Aws.Lambda.FakeRuntime [--version {VERSION}]`
 
@@ -98,6 +98,8 @@ Finally, run the tool.
 
 ## Lambda Template
 
-Install the template directly from this repository - there is no need to uninstall any previously installed version.
+Install the template directly from this repository using either of the following (there is no need to uninstall any previously installed version):
 
-`dotnet new --install  .\package\Stackage.Aws.Lambda.DotNetNew.Templates\content`
+A. `dotnet new --install  .\package\Stackage.Aws.Lambda.DotNetNew.Templates\content`
+
+B. `dotnet new --install Stackage.Aws.Lambda.DotNetNew.Templates.{VERSION}.nupkg`

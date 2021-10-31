@@ -28,4 +28,4 @@ jobs:
     - name: Build Generated Lambda
       working-directory: ./Lambda.Function
       shell: pwsh
-      run: ./build.ps1
+      run: ./build-package.ps1

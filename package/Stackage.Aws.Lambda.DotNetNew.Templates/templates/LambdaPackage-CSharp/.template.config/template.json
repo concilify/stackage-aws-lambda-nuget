@@ -32,7 +32,8 @@
       "modifiers": [
         {
           "rename": {
-            "build.ps1_": "build.ps1"
+            "build.ps1_": "build.ps1",
+            "build-package.ps1_": "build-package.ps1"
           }
         }
       ]
