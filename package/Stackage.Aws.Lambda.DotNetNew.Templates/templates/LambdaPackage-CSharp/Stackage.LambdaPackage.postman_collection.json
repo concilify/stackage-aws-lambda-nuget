@@ -1,0 +1,39 @@
+{
+	"info": {
+		"_postman_id": "58608bc4-39ba-42a6-9b3e-e3736bdfe381",
+		"name": "Stackage.LambdaPackage",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Invoke Lambda",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"name\": \"FOO\"}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:9001/2015-03-31/functions/Stackage.LambdaPackage/invocations",
+					"host": [
+						"localhost"
+					],
+					"port": "9001",
+					"path": [
+						"2015-03-31",
+						"functions",
+						"Stackage.LambdaPackage",
+						"invocations"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

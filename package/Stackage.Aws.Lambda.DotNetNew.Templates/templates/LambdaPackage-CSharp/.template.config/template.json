@@ -1,0 +1,68 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "Andrew Craven",
+  "name": "Stackage Lambda Package",
+  "classifications": [
+    "Stackage",
+    "AWS",
+    "Lambda",
+    "Package"
+  ],
+  "generatorVersions": "[1.0.0.0-*)",
+  "description": "A template for creating an AWS Lambda Package",
+  "groupIdentity": "Stackage.Templates.LambdaPackage",
+  "precedence": 0,
+  "identity": "Stackage.Templates.LambdaPackage.CSharp",
+  "shortName": "slm",
+  "tags": {
+    "language": "C#",
+    "type": "project"
+  },
+  "sourceName": "Stackage.LambdaPackage",
+  "preferNameDirectory": true,
+  "defaultName": "Stackage.LambdaPackage",
+  "guids": [
+    "C23D3101-6CBE-4D8E-A190-9E72C668FCB2",
+    "63614BF6-2E68-4913-B61B-588642929F26",
+    "70482D06-323A-41F3-BA06-5DC2FA7A201D",
+    "13C6F8A7-29C8-4631-922C-8444C97847EA"
+  ],
+  "sources": [
+    {
+      "modifiers": [
+        {
+          "rename": {
+            "build.ps1_": "build.ps1",
+            "build-package.ps1_": "build-package.ps1"
+          }
+        }
+      ]
+    }
+  ],
+  "symbols": {
+    "HostIdentifier": {
+      "type": "bind",
+      "binding": "HostIdentifier"
+    },
+    "packageNameLower": {
+      "type": "generated",
+      "generator": "casing",
+      "parameters": {
+        "source": "name",
+        "toLower": true
+      },
+      "replaces": "package-name-lower"
+    },
+    "packageDescription": {
+      "type": "parameter",
+      "replaces": "packageDescription",
+      "defaultValue": "Brief description of the package"
+    }
+  },
+  "primaryOutputs": [
+    {
+      "path": "Stackage.LambdaPackage.csproj"
+    }
+  ],
+  "postActions": []
+}

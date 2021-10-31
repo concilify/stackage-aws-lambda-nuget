@@ -1,0 +1,61 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30114.105
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "lambda", "lambda", "{C23D3101-6CBE-4D8E-A190-9E72C668FCB2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stackage.LambdaPackage", "lambda\Stackage.LambdaPackage\Stackage.LambdaPackage.csproj", "{63614BF6-2E68-4913-B61B-588642929F26}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stackage.LambdaPackage.Tests", "lambda\Stackage.LambdaPackage.Tests\Stackage.LambdaPackage.Tests.csproj", "{70482D06-323A-41F3-BA06-5DC2FA7A201D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{13C6F8A7-29C8-4631-922C-8444C97847EA}"
+ProjectSection(SolutionItems) = preProject
+	build.ps1 = build.ps1
+	README.md = README.md
+	Stackage.LambdaPackage.postman_collection.json = Stackage.LambdaPackage.postman_collection.json
+EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{63614BF6-2E68-4913-B61B-588642929F26}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{63614BF6-2E68-4913-B61B-588642929F26}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{63614BF6-2E68-4913-B61B-588642929F26}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{63614BF6-2E68-4913-B61B-588642929F26}.Debug|x64.Build.0 = Debug|Any CPU
+		{63614BF6-2E68-4913-B61B-588642929F26}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{63614BF6-2E68-4913-B61B-588642929F26}.Debug|x86.Build.0 = Debug|Any CPU
+		{63614BF6-2E68-4913-B61B-588642929F26}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{63614BF6-2E68-4913-B61B-588642929F26}.Release|Any CPU.Build.0 = Release|Any CPU
+		{63614BF6-2E68-4913-B61B-588642929F26}.Release|x64.ActiveCfg = Release|Any CPU
+		{63614BF6-2E68-4913-B61B-588642929F26}.Release|x64.Build.0 = Release|Any CPU
+		{63614BF6-2E68-4913-B61B-588642929F26}.Release|x86.ActiveCfg = Release|Any CPU
+		{63614BF6-2E68-4913-B61B-588642929F26}.Release|x86.Build.0 = Release|Any CPU
+		{70482D06-323A-41F3-BA06-5DC2FA7A201D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{70482D06-323A-41F3-BA06-5DC2FA7A201D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{70482D06-323A-41F3-BA06-5DC2FA7A201D}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{70482D06-323A-41F3-BA06-5DC2FA7A201D}.Debug|x64.Build.0 = Debug|Any CPU
+		{70482D06-323A-41F3-BA06-5DC2FA7A201D}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{70482D06-323A-41F3-BA06-5DC2FA7A201D}.Debug|x86.Build.0 = Debug|Any CPU
+		{70482D06-323A-41F3-BA06-5DC2FA7A201D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{70482D06-323A-41F3-BA06-5DC2FA7A201D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{70482D06-323A-41F3-BA06-5DC2FA7A201D}.Release|x64.ActiveCfg = Release|Any CPU
+		{70482D06-323A-41F3-BA06-5DC2FA7A201D}.Release|x64.Build.0 = Release|Any CPU
+		{70482D06-323A-41F3-BA06-5DC2FA7A201D}.Release|x86.ActiveCfg = Release|Any CPU
+		{70482D06-323A-41F3-BA06-5DC2FA7A201D}.Release|x86.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{63614BF6-2E68-4913-B61B-588642929F26} = {C23D3101-6CBE-4D8E-A190-9E72C668FCB2}
+		{70482D06-323A-41F3-BA06-5DC2FA7A201D} = {C23D3101-6CBE-4D8E-A190-9E72C668FCB2}
+	EndGlobalSection
+EndGlobal

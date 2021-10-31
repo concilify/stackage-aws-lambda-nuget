@@ -1,0 +1,6 @@
+{
+  "configuration": "Release",
+  "framework": "net5.0",
+  "function-runtime": "provided",
+  "msbuild-parameters": "--self-contained true --runtime linux-x64 /p:PublishTrimmed=true /p:PublishReadyToRun=true"
+}
