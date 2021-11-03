@@ -1,5 +1,4 @@
 using System.IO;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Stackage.Aws.Lambda.Abstractions;
@@ -14,7 +13,6 @@ namespace Lambda.Basic.Example
       public EchoLambdaHandler(ILogger<EchoLambdaHandler> logger)
       {
          _logger = logger;
-
       }
 
       public async Task<ILambdaResult> HandleAsync(Stream request, LambdaContext context)
@@ -25,9 +23,7 @@ namespace Lambda.Basic.Example
 
          _logger.LogInformation("Request handled {payload}", payload);
 
-         var output = new MemoryStream(Encoding.UTF8.GetBytes(payload));
-
-         return new StreamResult(output);
+         return new StringResult(payload);
       }
    }
 }

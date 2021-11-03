@@ -3,7 +3,7 @@ using Amazon.Lambda.Serialization.SystemTextJson;
 using Lambda.Middleware.Example.Handler;
 using Lambda.Middleware.Example.Model;
 using Microsoft.Extensions.Hosting;
-using Serilog;
+using Microsoft.Extensions.Logging;
 using Stackage.Aws.Lambda;
 using Stackage.Aws.Lambda.Extensions;
 
@@ -21,9 +21,9 @@ namespace Lambda.Middleware.Example
                builder.UseSerializer<CamelCaseLambdaJsonSerializer>();
                builder.UseHandler<ObjectLambdaHandler, InputPoco>();
             })
-            .UseSerilog((context, builder) =>
+            .ConfigureLogging(builder =>
             {
-               builder.ReadFrom.Configuration(context.Configuration);
+               builder.AddJsonConsole();
             })
             .Build();
 
