@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Amazon.Lambda.Serialization.SystemTextJson;
 using Microsoft.Extensions.Hosting;
-using Serilog;
+using Microsoft.Extensions.Logging;
 using Stackage.Aws.Lambda;
 using Stackage.Aws.Lambda.Extensions;
 
@@ -18,9 +18,9 @@ namespace Lambda.Basic.Example
                builder.UseSerializer<CamelCaseLambdaJsonSerializer>();
                builder.UseHandler<EchoLambdaHandler>();
             })
-            .UseSerilog((context, builder) =>
+            .ConfigureLogging(builder =>
             {
-               builder.ReadFrom.Configuration(context.Configuration);
+               builder.AddJsonConsole();
             })
             .Build();
 

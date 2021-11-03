@@ -39,13 +39,23 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Services
       {
          var function = _functions.GetOrAdd(functionName, name => new LambdaFunction(name));
 
-         var request = await function.QueuedRequests.DequeueAsync(cancellationToken);
+         _logger.LogInformation("Function {functionName} connected", functionName);
 
-         function.InFlightRequests.TryAdd(request.AwsRequestId, request);
+         try
+         {
+            var request = await function.QueuedRequests.DequeueAsync(cancellationToken);
 
-         _logger.LogInformation("Invocation scheduled {awsRequestId} {request}", request.AwsRequestId, request.Body);
+            function.InFlightRequests.TryAdd(request.AwsRequestId, request);
 
-         return request;
+            _logger.LogInformation("Invocation scheduled {awsRequestId}", request.AwsRequestId);
+
+            return request;
+         }
+         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+         {
+            _logger.LogInformation("Function {functionName} disconnected", functionName);
+            throw;
+         }
       }
 
       public void InvocationResponse(string functionName, string awsRequestId, string body)
