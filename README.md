@@ -1,14 +1,80 @@
 # stackage-aws-lambda-nuget
 
+## Custom Runtime
+
+The `Stackage.Aws.Lambda` package contains a custom runtime for creating AWS Lambda functions using .NET 5.0 that can benefit from the Dependency Injection and Middleware patterns.
+
+You can use the `Stackage.Aws.Lambda.DotNetNew.Templates` package via `dotnet new` to create an empty AWS Lambda Function which you can update with the code snippets below.
+
+Your AWS Lambda Function is a .NET console app with `Program.cs` similar to the following snippet. If you're familiar with ASP.NET Core, this won't look too unfamiliar.
+
+```cs
+   var host = LambdaHost.Create<MyRequest>(builder =>
+      {
+          builder.UseStartup<LambdaStartup>();
+          builder.UseSerializer<CamelCaseLambdaJsonSerializer>();
+          builder.UseHandler<MyLambdaHandler, MyRequest>();
+      })
+      .ConfigureLogging(builder =>
+      {
+          builder.AddJsonConsole();
+      })
+      .Build();
+
+   await host.RunAsync();
+```
+
+You can configure your services and middleware using an implementation of `ILambdaStartup` as per the following snippet. The intention is that you can create middleware that you can share across all your AWS Lambda Funtions.
+
+```cs
+   public class LambdaStartup : ILambdaStartup<MyRequest>
+   {
+      public void ConfigureServices(IServiceCollection services)
+      {
+         services.AddSingleton<ILambdaResultFactory, HttpLambdaResultFactory>();
+         services.AddDeadlineCancellation();
+      }
+
+      public void ConfigurePipeline(ILambdaPipelineBuilder<MyRequest> pipelineBuilder)
+      {
+        pipelineBuilder.Use<RequestLoggingMiddleware<MyRequest>, MyRequest>();
+        pipelineBuilder.Use<ExceptionHandlingMiddleware<MyRequest>, MyRequest>();
+        pipelineBuilder.Use<DeadlineCancellationMiddleware<MyRequest>, MyRequest>();
+      }
+   }
+```
+
+Each AWS Lambda Function must be in a separate .NET console app, but there's no reason you can't share code between them via shared packages or even house more than one per code repository.
+
+You can use constructor injection to inject your services into the handler. A basic handler will look something like the following snippet.
+
+```cs
+   public class MyLambdaHandler : ILambdaHandler<MyRequest>
+   {
+      public async Task<ILambdaResult> HandleAsync(MyRequest request, LambdaContext context)
+      {
+         return new StringResult("Greetings!");
+      }
+   }
+```
+
 ## Fake Runtime API
 
 ### Installation
 
-To enable debugging lambda functions that use the custom runtime, install the Fake Runtime API package as a global tool. To use a pre-release package you will need to specify the version.
+To enable debugging AWS Lambda functions that use the custom runtime, install the `Stackage.Aws.Lambda.FakeRuntime` package as a global tool using the `dotnet tool install --global` command.
 
-`dotnet tool install --global Stackage.Aws.Lambda.FakeRuntime [--version {VERSION}]`
+```
+dotnet tool install --global Stackage.Aws.Lambda.FakeRuntime
+```
 
-### Starting up
+To update to the latest version of the `Stackage.Aws.Lambda.FakeRuntime` package use the `dotnet tool update --global` command.
+
+```
+dotnet tool update --global Stackage.Aws.Lambda.FakeRuntime
+```
+
+### Usage
 
 With the Fake Runtime API installed, run `fake-lambda-runtime` in a console to start it up.
 
@@ -18,17 +84,15 @@ Alternatively, if you have cloned this repository, you can build and run the Fak
 
 ### Debugging
 
-The two examples lambda functions are both .NET console apps so can be easily be started in debug mode in your favourite IDE, remembering to start up the Fake Runtime API.
+The two example AWS Lambda functions are both .NET console apps so can be easily be started in debug mode in your favourite IDE, remembering to start up the Fake Runtime API.
 
-The `launchsettings.json` in the examples overrides the `AWS_LAMBDA_RUNTIME_API` environment variable. This follows the pattern `localhost:9001/{FUNCTION_NAME}` which allows the Fake Runtime API to support multiple lambda functions.
+The `launchsettings.json` in the examples overrides the `AWS_LAMBDA_RUNTIME_API` environment variable. This follows the pattern `localhost:9001/{FUNCTION_NAME}` which allows the Fake Runtime API to support multiple functions.
 
-When the lambda function runs it connects to the Fake Runtime API and waits for invocations.
-
-The lambda function can be invoked using one of the following methods:
+When the AWS Lambda function bootstraps it connects to the Fake Runtime API and waits for invocations. The function can be invoked using one of the following methods.
 
 A. cURL
 
-Run the following in your console, where `{FUNCTION_NAME}` is the name of your lambda function. If you use a console other than Powershell, you will most likely need to alter the escaping of quotes in the JSON body.
+Run the following in your console, where `{FUNCTION_NAME}` is the name of your function. If you use a console other than Powershell, you will most likely need to alter the escaping of quotes in the JSON body.
 
 ```ps
 curl -v -X POST "http://localhost:9001/2015-03-31/functions/{FUNCTION_NAME}/invocations" -H "content-type: application/json" -d '{\"foo\": \"bar\"}'
@@ -36,11 +100,11 @@ curl -v -X POST "http://localhost:9001/2015-03-31/functions/{FUNCTION_NAME}/invo
 
 B. Postman
 
-Import the `examples/Lambda Examples.postman_collection.json` file into Postman. This includes requests for both examples which can be changed to match your lambda functions.
+Import the `examples/Lambda Examples.postman_collection.json` file into Postman. This includes requests for both examples which can be changed to match your functions.
 
 C. AWS CLI
 
-Run the following in your console, where `{FUNCTION_NAME}` is the name of your lambda function. Again, if you use a console other than Powershell, you will most likely need to alter the escaping of quotes in the JSON body.
+Run the following in your console, where `{FUNCTION_NAME}` is the name of your function. Again, if you use a console other than Powershell, you will most likely need to alter the escaping of quotes in the JSON body.
 
 ```ps
 aws lambda invoke --endpoint-url http://localhost:9001 --function-name {FUNCTION_NAME} --payload '{\"foo\": \"bar\"}' --cli-binary-format raw-in-base64-out response.json
@@ -50,42 +114,14 @@ To perform an asynchronous invocation and not wait for the response, add `--invo
 
 ### Deploying
 
-From the root of the repository, build the lambda deployment packages.
+From the root of the repository, build the example AWS Lambda deployment packages using the `build-examples` script.
 
-`dotnet lambda package --project-location examples/Lambda.Basic.Example --output-package Lambda.Basic.Example.zip`
+`.\build-examples.ps1`
 
-`dotnet lambda package --project-location examples/Lambda.Middleware.Example --output-package Lambda.Middleware.Example.zip`
+This uses Docker to build the AWS Lambda deployment packages `Lambda.Basic.Example.zip` and `Lambda.Middleware.Example.zip` which are optimised for Linux.
 
 These can then be deployed using the AWS Console as described in [Creating Lambda functions defined as .zip file archives](https://docs.aws.amazon.com/lambda/latest/dg/configuration-function-zip.html).
 
-## Deployment Concerns
+## Contributing
 
-### Prerequisites
-
-A secret named `STACKAGE_NUGET_PUSH_TOKEN` containing a NuGet API key must have been added in order for GitHub Actions to be able to push NuGet packages
-
-### Releasing
-
-Tag the commit in the `main` branch that you wish to release with format `v*.*.*`. GitHub Actions will build this version and push the package to NuGet. Use format `v*.*.*-preview***` to build a pre-release NuGet package.
-
-## Developing Locally
-
-It's possible to build and install the tools locally without having to push to the NuGet repository.
-
-## Fake Runtime API
-
-You will need to uninstall the package if it's already installed.
-
-`dotnet tool uninstall --global Stackage.Aws.Lambda.FakeRuntime`
-
-From the root of the repository, build the Fake Runtime API package.
-
-`dotnet pack .\package\Stackage.Aws.Lambda.FakeRuntime -o .`
-
-From the same directory, install the package.
-
-`dotnet tool install --global --add-source . Stackage.Aws.Lambda.FakeRuntime`
-
-Finally, run the tool.
-
-`fake-lambda-runtime`
+If you would like to contribute, please read through the [CONTRIBUTING.md](./CONTRIBUTING.md) document.
