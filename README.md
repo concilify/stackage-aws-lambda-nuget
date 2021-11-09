@@ -4,9 +4,9 @@
 
 The `Stackage.Aws.Lambda` package contains a custom runtime for creating AWS Lambda functions using .NET 5.0 that can benefit from the Dependency Injection and Middleware patterns.
 
-You can use the `Stackage.Aws.Lambda.DotNetNew.Templates` package via `dotnet new` to create an empty AWS Lambda Function which you can update with the code snippets below.
+You can use the `Stackage.Aws.Lambda.DotNetNew.Templates` package via `dotnet new` to create an empty AWS Lambda function which you can update with the code snippets below.
 
-Your AWS Lambda Function is a .NET console app with `Program.cs` similar to the following snippet. If you're familiar with ASP.NET Core, this won't look too unfamiliar.
+Your AWS Lambda function is a .NET console app with `Program.cs` similar to the following snippet. If you're familiar with ASP.NET Core, this won't look too unfamiliar.
 
 ```cs
    var host = LambdaHost.Create<MyRequest>(builder =>
@@ -44,7 +44,7 @@ You can configure your services and middleware using an implementation of `ILamb
    }
 ```
 
-Each AWS Lambda Function must be in a separate .NET console app, but there's no reason you can't share code between them via shared packages or even house more than one per code repository.
+Each AWS Lambda function must be in a separate .NET console app, but there's no reason you can't share code between them via shared packages or even house more than one per code repository.
 
 You can use constructor injection to inject your services into the handler. A basic handler will look something like the following snippet.
 
