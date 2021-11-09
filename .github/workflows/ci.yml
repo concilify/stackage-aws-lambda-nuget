@@ -21,11 +21,3 @@ jobs:
       run: dotnet pack --configuration Release -p:Version=0.0.0-ci --output .
     - name: Test
       run: dotnet test --configuration Release
-    - name: Install Lambda Template
-      run: dotnet new --install ./Stackage.Aws.Lambda.DotNetNew.Templates.0.0.0-ci.nupkg
-    - name: Use Lambda Template
-      run: dotnet new slm --name Lambda.Function
-    - name: Build Generated Lambda
-      working-directory: ./Lambda.Function
-      shell: pwsh
-      run: ./build-package.ps1

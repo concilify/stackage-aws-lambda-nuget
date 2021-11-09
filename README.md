@@ -14,12 +14,6 @@ With the Fake Runtime API installed, run `fake-lambda-runtime` in a console to s
 
 Alternatively, if you have cloned this repository, you can build and run the Fake Runtime API using the Powershell script `run-fake-runtime.ps1`. In which case you need not install the global tool.
 
-## Lambda Template
-
-### Installation
-
-TODO
-
 ## Examples
 
 ### Debugging
@@ -95,11 +89,3 @@ From the same directory, install the package.
 Finally, run the tool.
 
 `fake-lambda-runtime`
-
-## Lambda Template
-
-Install the template directly from this repository using either of the following (there is no need to uninstall any previously installed version):
-
-A. `dotnet new --install  .\package\Stackage.Aws.Lambda.DotNetNew.Templates\content`
-
-B. `dotnet new --install Stackage.Aws.Lambda.DotNetNew.Templates.{VERSION}.nupkg`
