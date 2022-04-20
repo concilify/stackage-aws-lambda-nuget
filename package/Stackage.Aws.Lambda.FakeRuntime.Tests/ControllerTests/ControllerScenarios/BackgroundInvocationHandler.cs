@@ -24,6 +24,5 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Tests.ControllerTests.ControllerScenar
 
          await httpClient.PostAsync($"/{functionName}/2018-06-01/runtime/invocation/{awsRequestId}/response", content);
       }
-
    }
 }
