@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AWSSDK.Lambda" Version="3.7.12.6" />
+    <PackageReference Include="AWSSDK.Lambda" Version="3.7.13.9" />
   </ItemGroup>
 
 </Project>
