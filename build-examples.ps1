@@ -1,4 +1,4 @@
-docker build examples -t example-lambdas
+docker build examples --tag example-lambdas --progress=plain
 
 $id = docker create example-lambdas
 docker cp ${id}:/app/Lambda.Basic.Example.zip .
