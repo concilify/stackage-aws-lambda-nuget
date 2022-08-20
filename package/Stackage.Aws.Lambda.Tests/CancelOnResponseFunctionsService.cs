@@ -40,6 +40,11 @@ namespace Stackage.Aws.Lambda.Tests
          _cancellationTokenSource.Cancel();
       }
 
+      public void InitialisationError(string functionName, string body)
+      {
+         throw new System.NotImplementedException();
+      }
+
       public LambdaCompletion GetCompletion(string functionName, string awsRequestId)
       {
          return _decorated.GetCompletion(functionName, awsRequestId);

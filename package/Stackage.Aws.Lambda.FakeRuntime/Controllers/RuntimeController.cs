@@ -9,13 +9,13 @@ using Stackage.Aws.Lambda.FakeRuntime.Services;
 namespace Stackage.Aws.Lambda.FakeRuntime.Controllers
 {
    [ApiController]
-   [Route("{functionName}/2018-06-01/runtime/invocation")]
-   public class RuntimeInvocationController : ControllerBase
+   [Route("{functionName}/2018-06-01/runtime")]
+   public class RuntimeController : ControllerBase
    {
       private readonly FakeRuntimeOptions _options;
       private readonly IFunctionsService _functionsService;
 
-      public RuntimeInvocationController(
+      public RuntimeController(
          IOptions<FakeRuntimeOptions> options,
          IFunctionsService functionsService)
       {
@@ -23,7 +23,18 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Controllers
          _functionsService = functionsService;
       }
 
-      [HttpGet("next")]
+      [HttpPost("init/error")]
+      public async Task<IActionResult> ErrorAsync(string functionName)
+      {
+         using (var reader = new StreamReader(Request.Body))
+         {
+            _functionsService.InitialisationError(functionName, await reader.ReadToEndAsync());
+         }
+
+         return Accepted();
+      }
+
+      [HttpGet("invocation/next")]
       public async Task<IActionResult> NextAsync(string functionName)
       {
          var (awsRequestId, body) = await _functionsService.WaitForNextInvocationAsync(functionName, HttpContext.RequestAborted);
@@ -35,7 +46,7 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Controllers
          return Content(body, "application/json", Encoding.UTF8);
       }
 
-      [HttpPost("{awsRequestId}/response")]
+      [HttpPost("invocation/{awsRequestId}/response")]
       public async Task<IActionResult> ResponseAsync(string functionName, string awsRequestId)
       {
          using (var reader = new StreamReader(Request.Body))
@@ -43,10 +54,10 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Controllers
             _functionsService.InvocationResponse(functionName, awsRequestId, await reader.ReadToEndAsync());
          }
 
-         return Ok();
+         return Accepted();
       }
 
-      [HttpPost("{awsRequestId}/error")]
+      [HttpPost("invocation/{awsRequestId}/error")]
       public async Task<IActionResult> ErrorAsync(string functionName, string awsRequestId)
       {
          using (var reader = new StreamReader(Request.Body))
@@ -54,7 +65,7 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Controllers
             _functionsService.InvocationError(functionName, awsRequestId, await reader.ReadToEndAsync());
          }
 
-         return Ok();
+         return Accepted();
       }
    }
 }

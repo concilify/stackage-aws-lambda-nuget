@@ -14,6 +14,8 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Services
 
       void InvocationError(string functionName, string awsRequestId, string body);
 
+      void InitialisationError(string functionName, string body);
+
       LambdaCompletion GetCompletion(string functionName, string awsRequestId);
    }
 }
