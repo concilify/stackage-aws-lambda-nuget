@@ -31,6 +31,11 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Controllers
             _functionsService.InitialisationError(functionName, await reader.ReadToEndAsync());
          }
 
+         throw new NotSupportedException();
+         // TODO
+         // Non-recoverable initialization error. Runtime should exit after reporting
+         //    the error. Error will be served in response to the first invoke.
+
          return Accepted();
       }
 
