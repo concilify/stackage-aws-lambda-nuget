@@ -2,7 +2,7 @@
 
 ## Custom Runtime
 
-The `Stackage.Aws.Lambda` package contains a custom runtime for creating AWS Lambda functions using .NET 5.0 that can benefit from the Dependency Injection and Middleware patterns.
+The `Stackage.Aws.Lambda` package contains a custom runtime for creating AWS Lambda functions using .NET Core 3.1 or .NET 6.0 that can benefit from the Dependency Injection and Middleware patterns.
 
 You can use the `Stackage.Aws.Lambda.DotNetNew.Templates` package via `dotnet new` to create an empty AWS Lambda function which you can update with the code snippets below.
 
