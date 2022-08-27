@@ -18,16 +18,24 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Model
       {
       }
 
-      public async Task WaitForCompletion()
+      // Wait indefinitely until either cancellationToken is triggered (return false) or
+      // NotifyCompletion has been called (return true)
+      public async Task<bool> WaitForCompletion(CancellationToken cancellationToken)
       {
          _cancellationTokenSource = new CancellationTokenSource();
 
+         var combinedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(
+            _cancellationTokenSource.Token, cancellationToken);
+
          try
          {
-            await Task.Delay(TimeSpan.FromSeconds(60), _cancellationTokenSource.Token);
+            await Task.Delay(Timeout.Infinite, combinedTokenSource.Token);
          }
-         catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested)
+         catch (OperationCanceledException)
          {
+            Console.WriteLine($"foo {_cancellationTokenSource.IsCancellationRequested}");
+
+            return _cancellationTokenSource.IsCancellationRequested;
          }
          finally
          {
@@ -37,6 +45,8 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Model
                _cancellationTokenSource = null;
             }
          }
+
+         return false;
       }
 
       public void NotifyCompletion()

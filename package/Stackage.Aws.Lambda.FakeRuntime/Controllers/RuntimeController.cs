@@ -1,7 +1,9 @@
 using System;
 using System.IO;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Stackage.Aws.Lambda.FakeRuntime.Services;
@@ -31,7 +33,7 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Controllers
             _functionsService.InitialisationError(functionName, await reader.ReadToEndAsync());
          }
 
-         throw new NotSupportedException();
+         //throw new NotSupportedException();
          // TODO
          // Non-recoverable initialization error. Runtime should exit after reporting
          //    the error. Error will be served in response to the first invoke.
@@ -70,7 +72,7 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Controllers
             _functionsService.InvocationError(functionName, awsRequestId, await reader.ReadToEndAsync());
          }
 
-         return Accepted();
+         return new JsonResult(new { }) { StatusCode = StatusCodes.Status202Accepted };
       }
    }
 }

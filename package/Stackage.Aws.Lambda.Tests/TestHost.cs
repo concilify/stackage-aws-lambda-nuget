@@ -108,7 +108,15 @@ namespace Stackage.Aws.Lambda.Tests
          var functions = host.Services.GetRequiredService<LambdaFunction.Dictionary>();
          functions.TryAdd(function.Name, function);
 
-         await host.RunAsync(tokenSource.Token);
+         try
+         {
+            await host.RunAsync(tokenSource.Token);
+         }
+         catch (Exception e)
+         {
+            var x = e.Message;
+            throw;
+         }
 
          return functions;
       }
