@@ -22,13 +22,13 @@ namespace Stackage.Aws.Lambda
 
       protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
       {
-         _logger.LogInformation("Sending HTTP request {HttpMethod} {Uri}", request.Method, request.RequestUri);
+         _logger.LogInformation("Sending HTTP request {HttpMethod} {Uri}", request.Method.Method, request.RequestUri);
 
          var stopwatch = Stopwatch.StartNew();
 
          HttpResponseMessage response;
 
-         using (_logger.BeginScope(new Dictionary<string, object?> {{"HttpMethod", request.Method}, {"Uri", request.RequestUri}}))
+         using (_logger.BeginScope(new Dictionary<string, object?> {{"HttpMethod", request.Method.Method}, {"Uri", request.RequestUri}}))
          {
             try
             {
