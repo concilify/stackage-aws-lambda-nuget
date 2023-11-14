@@ -26,7 +26,7 @@ namespace Stackage.Aws.Lambda.Extensions
          });
       }
 
-      public static ILambdaPipelineBuilder<TRequest> Use<TMiddleware, TRequest>(this ILambdaPipelineBuilder<TRequest> pipelineBuilder)
+      public static ILambdaPipelineBuilder Use<TMiddleware, TRequest>(this ILambdaPipelineBuilder pipelineBuilder)
          where TMiddleware : ILambdaMiddleware<TRequest>
       {
          return pipelineBuilder.Use(next =>

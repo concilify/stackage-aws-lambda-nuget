@@ -15,7 +15,7 @@ namespace Stackage.Aws.Lambda.Extensions
          return builder;
       }
 
-      public static IHostBuilder ConfigureLambdaHost<TRequest>(this IHostBuilder builder, Action<ILambdaHostBuilder<TRequest>> configure)
+      public static IHostBuilder ConfigureLambdaHost<TRequest>(this IHostBuilder builder, Action<ILambdaHostBuilder> configure)
       {
          var lambdaHostBuilder = new LambdaHostBuilder<TRequest>(builder);
 

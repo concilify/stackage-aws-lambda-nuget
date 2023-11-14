@@ -15,7 +15,7 @@ namespace Stackage.Aws.Lambda.Extensions
          return builder;
       }
 
-      public static ILambdaHostBuilder<TRequest> UseHandler<THandler, TRequest>(this ILambdaHostBuilder<TRequest> builder)
+      public static ILambdaHostBuilder UseHandler<THandler, TRequest>(this ILambdaHostBuilder builder)
          where THandler : ILambdaHandler<TRequest>
       {
          builder.UseHandler(CreateDelegate<THandler, TRequest>);
@@ -23,7 +23,7 @@ namespace Stackage.Aws.Lambda.Extensions
          return builder;
       }
 
-      private static PipelineDelegate<TRequest> CreateDelegate<THandler, TRequest>(IServiceProvider requestServices)
+      private static PipelineDelegate CreateDelegate<THandler, TRequest>(IServiceProvider requestServices)
          where THandler : ILambdaHandler<TRequest>
       {
          var handler = ActivatorUtilities.CreateInstance<THandler>(requestServices);

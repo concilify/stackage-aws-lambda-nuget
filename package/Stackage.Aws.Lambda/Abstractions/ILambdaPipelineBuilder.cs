@@ -2,10 +2,10 @@
 
 namespace Stackage.Aws.Lambda.Abstractions
 {
-   public interface ILambdaPipelineBuilder<TRequest>
+   public interface ILambdaPipelineBuilder
    {
-      ILambdaPipelineBuilder<TRequest> Use(Func<PipelineDelegate<TRequest>, PipelineDelegate<TRequest>> middleware);
+      ILambdaPipelineBuilder Use(Func<PipelineDelegate, PipelineDelegate> middleware);
 
-      PipelineDelegate<TRequest> Build();
+      PipelineDelegate Build();
    }
 }

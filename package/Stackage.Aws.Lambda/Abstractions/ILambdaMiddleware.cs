@@ -10,6 +10,6 @@ namespace Stackage.Aws.Lambda.Abstractions
          TRequest request,
          ILambdaContext context,
          IServiceProvider requestServices,
-         PipelineDelegate<TRequest> next);
+         PipelineDelegate next);
    }
 }

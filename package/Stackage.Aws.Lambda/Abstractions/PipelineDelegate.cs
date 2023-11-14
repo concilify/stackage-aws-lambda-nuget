@@ -1,11 +1,12 @@
 using System;
+using System.IO;
 using System.Threading.Tasks;
 using Amazon.Lambda.Core;
 
 namespace Stackage.Aws.Lambda.Abstractions
 {
-   public delegate Task<ILambdaResult> PipelineDelegate<in TRequest>(
-      TRequest request,
+   public delegate Task<Stream> PipelineDelegate(
+      Stream request,
       ILambdaContext context,
-      IServiceProvider requestServices);
+      IServiceProvider serviceProvider);
 }

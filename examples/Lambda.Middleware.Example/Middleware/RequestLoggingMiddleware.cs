@@ -21,7 +21,7 @@ namespace Lambda.Middleware.Example.Middleware
          TRequest request,
          ILambdaContext context,
          IServiceProvider requestServices,
-         PipelineDelegate<TRequest> next)
+         PipelineDelegate next)
       {
          using (_logger.BeginScope(new Dictionary<string, object> {{"AwsRequestId", context.AwsRequestId}}))
          {

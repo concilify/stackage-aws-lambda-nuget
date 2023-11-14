@@ -11,24 +11,24 @@ using Stackage.Aws.Lambda.Abstractions;
 
 namespace Stackage.Aws.Lambda
 {
-   public class LambdaListener<TRequest> : ILambdaListener<TRequest>
+   public class LambdaListener : ILambdaListener
    {
-      private readonly ILambdaPipelineBuilder<TRequest> _pipelineBuilder;
+      private readonly ILambdaPipelineBuilder _pipelineBuilder;
       private readonly IRuntimeApiClient _runtimeApiClient;
-      private readonly IRequestHandler<TRequest> _requestHandler;
-      private readonly LambdaPipelineBuilderOptions<TRequest> _options;
-      private readonly ILogger<LambdaListener<TRequest>> _logger;
+      private readonly IServiceProvider _serviceProvider;
+      private readonly LambdaPipelineBuilderOptions _options;
+      private readonly ILogger<LambdaListener> _logger;
 
       public LambdaListener(
-         ILambdaPipelineBuilder<TRequest> pipelineBuilder,
+         ILambdaPipelineBuilder pipelineBuilder,
          IRuntimeApiClient runtimeApiClient,
-         IRequestHandler<TRequest> requestHandler,
-         IOptions<LambdaPipelineBuilderOptions<TRequest>> options,
-         ILogger<LambdaListener<TRequest>> logger)
-      {
+         IServiceProvider serviceProvider,
+         IOptions<LambdaPipelineBuilderOptions> options,
+         ILogger<LambdaListener> logger)
+         {
          _pipelineBuilder = pipelineBuilder;
          _runtimeApiClient = runtimeApiClient;
-         _requestHandler = requestHandler;
+         _serviceProvider = serviceProvider;
          _options = options.Value;
          _logger = logger;
       }
@@ -49,7 +49,7 @@ namespace Stackage.Aws.Lambda
          }
       }
 
-      private PipelineDelegate<TRequest> InitialisePipeline()
+      private PipelineDelegate InitialisePipeline()
       {
          _logger.LogDebug("Initialising pipeline");
 
@@ -62,7 +62,7 @@ namespace Stackage.Aws.Lambda
          return pipelineAsync;
       }
 
-      private async Task WaitAndInvokeNextAsync(PipelineDelegate<TRequest> pipelineAsync, CancellationToken cancellationToken)
+      private async Task WaitAndInvokeNextAsync(PipelineDelegate pipelineAsync, CancellationToken cancellationToken)
       {
          using var invocation = await _runtimeApiClient.GetNextInvocationAsync(cancellationToken);
 
@@ -76,7 +76,7 @@ namespace Stackage.Aws.Lambda
 
          try
          {
-            response = await _requestHandler.HandleAsync(invocation.InputStream, invocation.LambdaContext, pipelineAsync);
+            response = await pipelineAsync(invocation.InputStream, invocation.LambdaContext, scope.ServiceProvider);
          }
          catch (Exception e)
          {

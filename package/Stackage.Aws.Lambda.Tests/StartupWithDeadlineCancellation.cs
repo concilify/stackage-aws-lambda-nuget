@@ -5,14 +5,14 @@ using Stackage.Aws.Lambda.Middleware;
 
 namespace Stackage.Aws.Lambda.Tests
 {
-   public class StartupWithDeadlineCancellation<TRequest> : ILambdaStartup<TRequest>
+   public class StartupWithDeadlineCancellation<TRequest> : ILambdaStartup
    {
       public void ConfigureServices(IServiceCollection services)
       {
          services.AddDeadlineCancellation();
       }
 
-      public void ConfigurePipeline(ILambdaPipelineBuilder<TRequest> pipelineBuilder)
+      public void ConfigurePipeline(ILambdaPipelineBuilder pipelineBuilder)
       {
          pipelineBuilder.Use<DeadlineCancellationMiddleware<TRequest>, TRequest>();
       }

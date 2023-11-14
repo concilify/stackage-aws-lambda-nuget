@@ -45,7 +45,7 @@ namespace Stackage.Aws.Lambda
                services.AddHostedService<LambdaListenerHostedService<TRequest>>();
 
                services.AddSingleton<ILambdaListener<TRequest>, LambdaListener<TRequest>>();
-               services.AddSingleton<ILambdaPipelineBuilder<TRequest>, LambdaPipelineBuilder<TRequest>>();
+               services.AddSingleton<ILambdaPipelineBuilder, LambdaPipelineBuilder<TRequest>>();
                services.AddSingleton<IRuntimeApiClient>(CreateRuntimeApiClient);
                services.AddSingleton<IRequestHandler<TRequest>, RequestHandler<TRequest>>();
                services.AddSingleton<IRequestParser<TRequest>, TParser>();

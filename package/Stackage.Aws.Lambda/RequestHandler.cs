@@ -26,7 +26,7 @@ namespace Stackage.Aws.Lambda
       public async Task<Stream> HandleAsync(
          Stream requestStream,
          ILambdaContext context,
-         PipelineDelegate<TRequest> pipelineAsync)
+         PipelineDelegate pipelineAsync)
       {
          using var scope = _serviceProvider.CreateScope();
 

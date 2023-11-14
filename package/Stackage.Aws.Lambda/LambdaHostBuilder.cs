@@ -49,7 +49,7 @@ namespace Stackage.Aws.Lambda
          });
       }
 
-      public void UseHandler(Func<IServiceProvider, PipelineDelegate<TRequest>> handlerFactory)
+      public void UseHandler(Func<IServiceProvider, PipelineDelegate> handlerFactory)
       {
          _builder.ConfigureServices(services =>
          {

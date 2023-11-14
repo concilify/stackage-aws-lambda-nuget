@@ -23,7 +23,7 @@ namespace Stackage.Aws.Lambda.Middleware
          TRequest request,
          ILambdaContext context,
          IServiceProvider requestServices,
-         PipelineDelegate<TRequest> next)
+         PipelineDelegate next)
       {
          try
          {
