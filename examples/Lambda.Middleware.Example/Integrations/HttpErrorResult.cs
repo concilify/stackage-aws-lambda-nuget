@@ -16,7 +16,7 @@ namespace Lambda.Middleware.Example.Integrations
          _message = message;
       }
 
-      public Stream SerializeResult(ILambdaSerializer serializer, LambdaContext context)
+      public Stream SerializeResult(ILambdaSerializer serializer, ILambdaContext context)
       {
          var response = new
          {
