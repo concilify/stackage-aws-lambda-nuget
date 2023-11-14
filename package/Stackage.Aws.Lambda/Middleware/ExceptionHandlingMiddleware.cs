@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using Amazon.Lambda.Core;
 using Microsoft.Extensions.Logging;
 using Stackage.Aws.Lambda.Abstractions;
 
@@ -20,12 +21,13 @@ namespace Stackage.Aws.Lambda.Middleware
 
       public async Task<ILambdaResult> InvokeAsync(
          TRequest request,
-         LambdaContext context,
+         ILambdaContext context,
+         IServiceProvider requestServices,
          PipelineDelegate<TRequest> next)
       {
          try
          {
-            return await next(request, context);
+            return await next(request, context, requestServices);
          }
          catch (Exception e)
          {

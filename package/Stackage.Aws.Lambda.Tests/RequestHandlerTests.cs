@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
@@ -23,10 +24,13 @@ namespace Stackage.Aws.Lambda.Tests
 
          var resolvedContracts = new List<IContract>();
 
-         Task<ILambdaResult> ResolveWithinScopeTwice(StringPoco request, LambdaContext context)
+         Task<ILambdaResult> ResolveWithinScopeTwice(
+            StringPoco request,
+            ILambdaContext context,
+            IServiceProvider requestServices)
          {
-            resolvedContracts.Add(context.RequestServices.GetRequiredService<IContract>());
-            resolvedContracts.Add(context.RequestServices.GetRequiredService<IContract>());
+            resolvedContracts.Add(requestServices.GetRequiredService<IContract>());
+            resolvedContracts.Add(requestServices.GetRequiredService<IContract>());
 
             return Task.FromResult(A.Fake<ILambdaResult>());
          }

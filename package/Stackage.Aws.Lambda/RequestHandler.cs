@@ -30,13 +30,12 @@ namespace Stackage.Aws.Lambda
       {
          using var scope = _serviceProvider.CreateScope();
 
-         var wrapperContext = new DefaultLambdaContext(scope.ServiceProvider, context);
-
          var lambdaResult = await pipelineAsync(
             _parser.Parse(requestStream),
-            wrapperContext);
+            context,
+            scope.ServiceProvider);
 
-         return lambdaResult.SerializeResult(_serializer, wrapperContext);
+         return lambdaResult.SerializeResult(_serializer, context);
       }
    }
 }

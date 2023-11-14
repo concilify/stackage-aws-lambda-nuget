@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using Amazon.Lambda.Core;
 using FakeItEasy;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -25,7 +26,8 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
 
          Task<ILambdaResult> InnerDelegate(
             StringPoco request,
-            LambdaContext context)
+            ILambdaContext context,
+            IServiceProvider requestServices)
          {
             return Task.FromResult(expectedResult);
          }
@@ -33,6 +35,7 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
          var result = await middleware.InvokeAsync(
             new StringPoco(),
             LambdaContextFake.Valid(),
+            A.Fake<IServiceProvider>(),
             InnerDelegate);
 
          Assert.That(result, Is.SameAs(expectedResult));
@@ -62,7 +65,10 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
             cancellationInitializer: deadlineCancellation,
             resultFactory: resultFactory);
 
-         async Task<ILambdaResult> LongRunningInnerDelegate(StringPoco request, LambdaContext context)
+         async Task<ILambdaResult> LongRunningInnerDelegate(
+            StringPoco request,
+            ILambdaContext context,
+            IServiceProvider requestServices)
          {
             await Task.Delay(TimeSpan.FromHours(1), deadlineCancellation.Token);
 
@@ -74,6 +80,7 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
          var result = await middleware.InvokeAsync(
             new StringPoco(),
             LambdaContextFake.WithRemainingTime(TimeSpan.FromMilliseconds(remainingMs)),
+            A.Fake<IServiceProvider>(),
             LongRunningInnerDelegate);
 
          Assert.That(result, Is.SameAs(expectedResult));
