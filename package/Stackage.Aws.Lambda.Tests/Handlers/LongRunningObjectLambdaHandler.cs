@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using Amazon.Lambda.Core;
 using Stackage.Aws.Lambda.Abstractions;
 using Stackage.Aws.Lambda.Results;
 using Stackage.Aws.Lambda.Tests.Model;
@@ -14,7 +15,7 @@ namespace Stackage.Aws.Lambda.Tests.Handlers
          _deadlineCancellation = deadlineCancellation;
       }
 
-      public async Task<ILambdaResult> HandleAsync(StringPoco request, LambdaContext context)
+      public async Task<ILambdaResult> HandleAsync(StringPoco request, ILambdaContext context)
       {
          await Task.Delay(10000, _deadlineCancellation.Token);
 

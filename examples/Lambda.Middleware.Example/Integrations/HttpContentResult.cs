@@ -16,7 +16,7 @@ namespace Lambda.Middleware.Example.Integrations
          _statusCode = statusCode;
       }
 
-      public Stream SerializeResult(ILambdaSerializer serializer, LambdaContext context)
+      public Stream SerializeResult(ILambdaSerializer serializer, ILambdaContext context)
       {
          var response = new
          {

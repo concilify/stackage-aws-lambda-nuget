@@ -1,5 +1,6 @@
 using System.IO;
 using System.Threading.Tasks;
+using Amazon.Lambda.Core;
 using Microsoft.Extensions.Logging;
 using Stackage.Aws.Lambda.Abstractions;
 using Stackage.Aws.Lambda.Results;
@@ -15,7 +16,7 @@ namespace Lambda.Basic.Example
          _logger = logger;
       }
 
-      public async Task<ILambdaResult> HandleAsync(Stream request, LambdaContext context)
+      public async Task<ILambdaResult> HandleAsync(Stream request, ILambdaContext context)
       {
          using var reader = new StreamReader(request);
 

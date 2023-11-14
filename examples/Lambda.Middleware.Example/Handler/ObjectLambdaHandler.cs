@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using Amazon.Lambda.Core;
 using Lambda.Middleware.Example.Integrations;
 using Lambda.Middleware.Example.Model;
 using Stackage.Aws.Lambda.Abstractions;
@@ -15,7 +16,7 @@ namespace Lambda.Middleware.Example.Handler
          _deadlineCancellation = deadlineCancellation;
       }
 
-      public async Task<ILambdaResult> HandleAsync(InputPoco request, LambdaContext context)
+      public async Task<ILambdaResult> HandleAsync(InputPoco request, ILambdaContext context)
       {
          if (request.Action == "throw")
          {
