@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using Amazon.Lambda.Core;
 using FakeItEasy;
 using Microsoft.Extensions.Logging;
 using NUnit.Framework;
@@ -21,12 +22,17 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
 
          Task<ILambdaResult> InnerDelegate(
             StringPoco request,
-            LambdaContext context)
+            ILambdaContext context,
+            IServiceProvider requestServices)
          {
             return Task.FromResult(expectedResult);
          }
 
-         var result = await middleware.InvokeAsync(new StringPoco(), A.Fake<LambdaContext>(), InnerDelegate);
+         var result = await middleware.InvokeAsync(
+            new StringPoco(),
+            A.Fake<ILambdaContext>(),
+            A.Fake<IServiceProvider>(),
+            InnerDelegate);
 
          Assert.That(result, Is.SameAs(expectedResult));
       }
@@ -43,12 +49,17 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
 
          Task<ILambdaResult> InnerDelegate(
             StringPoco request,
-            LambdaContext context)
+            ILambdaContext context,
+            IServiceProvider requestServices)
          {
             throw exceptionToThrow;
          }
 
-         var result = await middleware.InvokeAsync(new StringPoco(), A.Fake<LambdaContext>(), InnerDelegate);
+         var result = await middleware.InvokeAsync(
+            new StringPoco(),
+            A.Fake<ILambdaContext>(),
+            A.Fake<IServiceProvider>(),
+            InnerDelegate);
 
          Assert.That(result, Is.SameAs(expectedResult));
       }

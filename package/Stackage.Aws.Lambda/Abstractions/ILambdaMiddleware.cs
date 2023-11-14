@@ -1,4 +1,6 @@
+using System;
 using System.Threading.Tasks;
+using Amazon.Lambda.Core;
 
 namespace Stackage.Aws.Lambda.Abstractions
 {
@@ -6,7 +8,8 @@ namespace Stackage.Aws.Lambda.Abstractions
    {
       Task<ILambdaResult> InvokeAsync(
          TRequest request,
-         LambdaContext context,
+         ILambdaContext context,
+         IServiceProvider requestServices,
          PipelineDelegate<TRequest> next);
    }
 }

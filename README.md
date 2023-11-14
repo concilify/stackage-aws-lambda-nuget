@@ -51,7 +51,7 @@ You can use constructor injection to inject your services into the handler. A ba
 ```cs
    public class MyLambdaHandler : ILambdaHandler<MyRequest>
    {
-      public async Task<ILambdaResult> HandleAsync(MyRequest request, LambdaContext context)
+      public async Task<ILambdaResult> HandleAsync(MyRequest request, ILambdaContext context)
       {
          return new StringResult("Greetings!");
       }
@@ -95,7 +95,7 @@ A. cURL
 Run the following in your console, where `{FUNCTION_NAME}` is the name of your function. If you use a console other than Powershell, you will most likely need to alter the escaping of quotes in the JSON body.
 
 ```ps
-curl -v -X POST "http://localhost:9001/2015-03-31/functions/{FUNCTION_NAME}/invocations" -H "content-type: application/json" -d '{\"foo\": \"bar\"}'
+curl -v -X POST "http://localhost:9001/2015-03-31/functions/{FUNCTION_NAME}/invocations" -H "content-type: application/json" -d '{"foo": "bar"}'
 ```
 
 B. Postman
@@ -107,7 +107,7 @@ C. AWS CLI
 Run the following in your console, where `{FUNCTION_NAME}` is the name of your function. Again, if you use a console other than Powershell, you will most likely need to alter the escaping of quotes in the JSON body.
 
 ```ps
-aws lambda invoke --endpoint-url http://localhost:9001 --function-name {FUNCTION_NAME} --payload '{\"foo\": \"bar\"}' --cli-binary-format raw-in-base64-out response.json
+aws lambda invoke --endpoint-url http://localhost:9001 --function-name {FUNCTION_NAME} --payload '{"foo": "bar"}' --cli-binary-format raw-in-base64-out response.json
 ```
 
 To perform an asynchronous invocation and not wait for the response, add `--invocation-type Event` to the command.

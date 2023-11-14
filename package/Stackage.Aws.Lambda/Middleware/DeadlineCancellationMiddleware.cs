@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Amazon.Lambda.Core;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -29,7 +30,8 @@ namespace Stackage.Aws.Lambda.Middleware
 
       public async Task<ILambdaResult> InvokeAsync(
          TRequest request,
-         LambdaContext context,
+         ILambdaContext context,
+         IServiceProvider requestServices,
          PipelineDelegate<TRequest> next)
       {
          var effectiveRemainingTimeMs = Math.Max((int) context.RemainingTime.Subtract(_hostOptions.ShutdownTimeout).TotalMilliseconds, 0);
@@ -40,7 +42,7 @@ namespace Stackage.Aws.Lambda.Middleware
 
          try
          {
-            return await next(request, context);
+            return await next(request, context, requestServices);
          }
          catch (OperationCanceledException) when (requestAborted.IsCancellationRequested)
          {

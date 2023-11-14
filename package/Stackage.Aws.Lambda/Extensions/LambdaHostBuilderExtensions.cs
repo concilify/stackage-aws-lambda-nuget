@@ -28,7 +28,7 @@ namespace Stackage.Aws.Lambda.Extensions
       {
          var handler = ActivatorUtilities.CreateInstance<THandler>(requestServices);
 
-         return async (stream, context) =>
+         return async (stream, context, _) =>
          {
             var outputStream = await handler.HandleAsync(stream, context);
 

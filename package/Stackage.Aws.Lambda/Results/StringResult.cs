@@ -15,7 +15,7 @@ namespace Stackage.Aws.Lambda.Results
          _content = content ?? throw new ArgumentNullException(nameof(content));
       }
 
-      public Stream SerializeResult(ILambdaSerializer serializer, LambdaContext context)
+      public Stream SerializeResult(ILambdaSerializer serializer, ILambdaContext context)
       {
          return new MemoryStream(Encoding.UTF8.GetBytes(_content));
       }
