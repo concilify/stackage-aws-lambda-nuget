@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -37,6 +38,8 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Controllers
             return BadRequest("X-Amz-Invocation-Type must be one of RequestResponse, Event or DryRun");
          }
 
+         // TODO: Return error if function didn't initialise
+
          LambdaRequest request;
 
          using (var reader = new StreamReader(Request.Body))
@@ -51,7 +54,12 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Controllers
             return Accepted();
          }
 
-         await request.WaitForCompletion();
+         if (!await request.WaitForCompletion(HttpContext.RequestAborted))
+         {
+            // TODO: Cancel the function invocation
+
+            return StatusCode(499);
+         }
 
          var completion = _functionsService.GetCompletion(functionName, request.AwsRequestId);
 

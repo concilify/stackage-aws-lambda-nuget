@@ -76,6 +76,8 @@ namespace Stackage.Aws.Lambda
 
          try
          {
+            // TODO: Need to be able to cancel this
+
             response = await _requestHandler.HandleAsync(invocation.InputStream, invocation.LambdaContext, pipelineAsync);
          }
          catch (Exception e)
