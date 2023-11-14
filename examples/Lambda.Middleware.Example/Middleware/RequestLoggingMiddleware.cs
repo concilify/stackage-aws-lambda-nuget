@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using Amazon.Lambda.Core;
 using Microsoft.Extensions.Logging;
 using Stackage.Aws.Lambda.Abstractions;
 
@@ -17,7 +19,8 @@ namespace Lambda.Middleware.Example.Middleware
 
       public async Task<ILambdaResult> InvokeAsync(
          TRequest request,
-         LambdaContext context,
+         ILambdaContext context,
+         IServiceProvider requestServices,
          PipelineDelegate<TRequest> next)
       {
          using (_logger.BeginScope(new Dictionary<string, object> {{"AwsRequestId", context.AwsRequestId}}))
@@ -28,7 +31,7 @@ namespace Lambda.Middleware.Example.Middleware
 
             try
             {
-               return await next(request, context);
+               return await next(request, context, requestServices);
             }
             finally
             {
