@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Stackage.Aws.Lambda.Abstractions;
+using Stackage.Aws.Lambda.Executors;
 
 namespace Stackage.Aws.Lambda
 {
@@ -20,16 +21,16 @@ namespace Stackage.Aws.Lambda
 
       public PipelineDelegate Build()
       {
-         PipelineDelegate<TRequest> pipeline = (request, context, requestServices) =>
+         PipelineDelegate pipeline = (request, context, requestServices) =>
          {
-            var handlerAsync = requestServices.GetService<PipelineDelegate>();
+            var handlerExecutor = requestServices.GetService<ILambdaHandlerExecutor>();
 
-            if (handlerAsync == null)
+            if (handlerExecutor == null)
             {
                throw new InvalidOperationException("No handler configured. Please specify a handler via ILambdaHostBuilder.UseHandler.");
             }
 
-            return handlerAsync(request, context, requestServices);
+            return handlerExecutor.ExecuteAsync(request, context);
          };
 
          foreach (var component in _components.Reverse())

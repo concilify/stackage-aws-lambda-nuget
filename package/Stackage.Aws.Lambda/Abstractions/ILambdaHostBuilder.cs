@@ -1,4 +1,3 @@
-using System;
 using System.IO;
 using Amazon.Lambda.Core;
 
@@ -10,6 +9,10 @@ namespace Stackage.Aws.Lambda.Abstractions
 
       void UseSerializer<TSerializer>() where TSerializer : class, ILambdaSerializer;
 
-      void UseHandler(Func<IServiceProvider, PipelineDelegate> handlerFactory);
+      void UseHandler<THandler>()
+         where THandler : class, ILambdaHandler<Stream>;
+
+      void UseHandler<THandler, TRequest>()
+         where THandler : class, ILambdaHandler<TRequest>;
    }
 }

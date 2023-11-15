@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Threading.Tasks;
 using Amazon.Lambda.Core;
 using FakeItEasy;
@@ -21,7 +22,7 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
          var middleware = CreateMiddleware();
 
          Task<ILambdaResult> InnerDelegate(
-            StringPoco request,
+            Stream request,
             ILambdaContext context,
             IServiceProvider requestServices)
          {
@@ -29,7 +30,7 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
          }
 
          var result = await middleware.InvokeAsync(
-            new StringPoco(),
+            new MemoryStream(),
             A.Fake<ILambdaContext>(),
             A.Fake<IServiceProvider>(),
             InnerDelegate);
@@ -48,7 +49,7 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
          var middleware = CreateMiddleware(resultFactory: resultFactory);
 
          Task<ILambdaResult> InnerDelegate(
-            StringPoco request,
+            Stream request,
             ILambdaContext context,
             IServiceProvider requestServices)
          {
@@ -56,7 +57,7 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
          }
 
          var result = await middleware.InvokeAsync(
-            new StringPoco(),
+            new MemoryStream(),
             A.Fake<ILambdaContext>(),
             A.Fake<IServiceProvider>(),
             InnerDelegate);
@@ -64,14 +65,14 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
          Assert.That(result, Is.SameAs(expectedResult));
       }
 
-      private static ILambdaMiddleware<StringPoco> CreateMiddleware(
+      private static ILambdaMiddleware CreateMiddleware(
          ILambdaResultFactory resultFactory = null,
-         ILogger<ExceptionHandlingMiddleware<StringPoco>> logger = null)
+         ILogger<ExceptionHandlingMiddleware> logger = null)
       {
          resultFactory ??= A.Fake<ILambdaResultFactory>();
-         logger ??= A.Fake<ILogger<ExceptionHandlingMiddleware<StringPoco>>>();
+         logger ??= A.Fake<ILogger<ExceptionHandlingMiddleware>>();
 
-         return new ExceptionHandlingMiddleware<StringPoco>(
+         return new ExceptionHandlingMiddleware(
             resultFactory,
             logger);
       }

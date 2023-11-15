@@ -40,13 +40,13 @@ namespace Stackage.Aws.Lambda.Tests
       }
 
       public static async Task<LambdaFunction.Dictionary> RunAsync<TRequest>(
-         Action<ILambdaHostBuilder<TRequest>> configureLambdaHost,
+         Action<ILambdaHostBuilder> configureLambdaHost,
          Action<IConfigurationBuilder> configureConfiguration,
          string functionName,
          params LambdaRequest[] invokeRequests)
       {
          return await RunAsync<TRequest>(
-            LambdaHost.Create<TRequest>(builder =>
+            LambdaHost.Create(builder =>
             {
                builder.UseSerializer<CamelCaseLambdaJsonSerializer>();
                configureLambdaHost(builder);
@@ -82,7 +82,7 @@ namespace Stackage.Aws.Lambda.Tests
             })
             .ConfigureServices(services =>
             {
-               services.Decorate<ILambdaListener<TRequest>, DelayedStartLambdaListener<TRequest>>();
+               services.Decorate<ILambdaListener, DelayedStartLambdaListener<TRequest>>();
                services.Configure<HostOptions>(options =>
                {
                   options.ShutdownTimeout = TimeSpan.FromMilliseconds(10);
@@ -114,18 +114,18 @@ namespace Stackage.Aws.Lambda.Tests
       }
 
       // Delay listener start to allow for fake runtime api to start
-      private class DelayedStartLambdaListener<TRequest> : ILambdaListener<TRequest>
+      private class DelayedStartLambdaListener<TRequest> : ILambdaListener
       {
-         private readonly ILambdaListener<TRequest> _innerListener;
+         private readonly ILambdaListener _innerListener;
 
-         public DelayedStartLambdaListener(ILambdaListener<TRequest> innerListener)
+         public DelayedStartLambdaListener(ILambdaListener innerListener)
          {
             _innerListener = innerListener;
          }
 
          public async Task ListenAsync(CancellationToken cancellationToken)
          {
-            using var httpClient = new HttpClient {BaseAddress = new Uri($"http://{RuntimeApiHostAndPort}")};
+            using var httpClient = new HttpClient { BaseAddress = new Uri($"http://{RuntimeApiHostAndPort}") };
 
             for (var i = 0; i < 30; i++)
             {

@@ -5,7 +5,7 @@ using Amazon.Lambda.Core;
 
 namespace Stackage.Aws.Lambda.Abstractions
 {
-   public delegate Task<Stream> PipelineDelegate(
+   public delegate Task<ILambdaResult> PipelineDelegate(
       Stream request,
       ILambdaContext context,
       IServiceProvider serviceProvider);

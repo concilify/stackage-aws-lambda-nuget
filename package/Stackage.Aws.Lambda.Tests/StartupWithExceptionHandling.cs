@@ -7,7 +7,7 @@ using Stackage.Aws.Lambda.Results;
 
 namespace Stackage.Aws.Lambda.Tests
 {
-   public class StartupWithExceptionHandling<TRequest> : ILambdaStartup
+   public class StartupWithExceptionHandling : ILambdaStartup
    {
       public void ConfigureServices(IServiceCollection services)
       {
@@ -16,7 +16,7 @@ namespace Stackage.Aws.Lambda.Tests
 
       public void ConfigurePipeline(ILambdaPipelineBuilder pipelineBuilder)
       {
-         pipelineBuilder.Use<ExceptionHandlingMiddleware<TRequest>, TRequest>();
+         pipelineBuilder.Use<ExceptionHandlingMiddleware>();
       }
 
       private class LambdaResultFactory : ILambdaResultFactory
