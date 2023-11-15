@@ -8,7 +8,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Stackage.Aws.Lambda.Abstractions;
-using Stackage.Aws.Lambda.Extensions;
 
 namespace Stackage.Aws.Lambda
 {
@@ -23,32 +22,31 @@ namespace Stackage.Aws.Lambda
       public static IHostBuilder Create(Action<ILambdaHostBuilder> configure)
       {
          return Create()
-            .ConfigureListener<Stream, StreamParser>()
+            .ConfigureListener()
             .ConfigureLambdaHost(configure);
       }
 
-      public static IHostBuilder Create<TRequest>(Action<ILambdaHostBuilder<TRequest>> configure)
+      private static IHostBuilder ConfigureLambdaHost(this IHostBuilder builder, Action<ILambdaHostBuilder> configure)
       {
-         return Create()
-            .ConfigureListener<TRequest, RequestParser<TRequest>>()
-            .ConfigureLambdaHost(configure);
+         var lambdaHostBuilder = new LambdaHostBuilder(builder);
+
+         configure(lambdaHostBuilder);
+
+         return builder;
       }
 
-      private static IHostBuilder ConfigureListener<TRequest, TParser>(this IHostBuilder hostBuilder)
-         where TParser : class, IRequestParser<TRequest>
+      private static IHostBuilder ConfigureListener(this IHostBuilder hostBuilder)
       {
          return hostBuilder
             .ConfigureServices((context, services) =>
             {
                services.Configure<HostOptions>(context.Configuration.GetSection("HostOptions"));
 
-               services.AddHostedService<LambdaListenerHostedService<TRequest>>();
+               services.AddHostedService<LambdaListenerHostedService>();
 
-               services.AddSingleton<ILambdaListener<TRequest>, LambdaListener<TRequest>>();
-               services.AddSingleton<ILambdaPipelineBuilder<TRequest>, LambdaPipelineBuilder<TRequest>>();
+               services.AddSingleton<ILambdaListener, LambdaListener>();
+               services.AddSingleton<ILambdaPipelineBuilder, LambdaPipelineBuilder>();
                services.AddSingleton<IRuntimeApiClient>(CreateRuntimeApiClient);
-               services.AddSingleton<IRequestHandler<TRequest>, RequestHandler<TRequest>>();
-               services.AddSingleton<IRequestParser<TRequest>, TParser>();
 
                // TODO: Lambda fails after 3 seconds when using this
                // services.AddHttpClient<RuntimeApiClient>(ConfigureRuntimeHttpClient);

@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Amazon.Lambda.Core;
@@ -9,18 +10,18 @@ using Stackage.Aws.Lambda.Abstractions;
 
 namespace Stackage.Aws.Lambda.Middleware
 {
-   public class DeadlineCancellationMiddleware<TRequest> : ILambdaMiddleware<TRequest>
+   public class DeadlineCancellationMiddleware : ILambdaMiddleware
    {
       private readonly HostOptions _hostOptions;
       private readonly IDeadlineCancellationInitializer _deadlineCancellationInitializer;
       private readonly ILambdaResultFactory _resultFactory;
-      private readonly ILogger<DeadlineCancellationMiddleware<TRequest>> _logger;
+      private readonly ILogger<DeadlineCancellationMiddleware> _logger;
 
       public DeadlineCancellationMiddleware(
          IOptions<HostOptions> hostOptions,
          IDeadlineCancellationInitializer deadlineCancellationInitializer,
          ILambdaResultFactory resultFactory,
-         ILogger<DeadlineCancellationMiddleware<TRequest>> logger)
+         ILogger<DeadlineCancellationMiddleware> logger)
       {
          _hostOptions = hostOptions.Value;
          _deadlineCancellationInitializer = deadlineCancellationInitializer;
@@ -29,10 +30,10 @@ namespace Stackage.Aws.Lambda.Middleware
       }
 
       public async Task<ILambdaResult> InvokeAsync(
-         TRequest request,
+         Stream request,
          ILambdaContext context,
          IServiceProvider requestServices,
-         PipelineDelegate<TRequest> next)
+         PipelineDelegate next)
       {
          var effectiveRemainingTimeMs = Math.Max((int) context.RemainingTime.Subtract(_hostOptions.ShutdownTimeout).TotalMilliseconds, 0);
 

@@ -1,20 +1,13 @@
-using System;
 using System.IO;
 using Amazon.Lambda.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Stackage.Aws.Lambda.Abstractions;
+using Stackage.Aws.Lambda.Executors;
 
 namespace Stackage.Aws.Lambda
 {
-   public class LambdaHostBuilder : LambdaHostBuilder<Stream>, ILambdaHostBuilder
-   {
-      public LambdaHostBuilder(IHostBuilder builder) : base(builder)
-      {
-      }
-   }
-
-   public class LambdaHostBuilder<TRequest> : ILambdaHostBuilder<TRequest>
+   public class LambdaHostBuilder : ILambdaHostBuilder
    {
       private readonly IHostBuilder _builder;
 
@@ -23,7 +16,7 @@ namespace Stackage.Aws.Lambda
          _builder = builder;
       }
 
-      public void UseStartup<TStartup>() where TStartup : ILambdaStartup<TRequest>
+      public void UseStartup<TStartup>() where TStartup : ILambdaStartup
       {
          _builder.ConfigureServices((context, services) =>
          {
@@ -31,7 +24,7 @@ namespace Stackage.Aws.Lambda
 
             startup.ConfigureServices(services);
 
-            services.Configure<LambdaPipelineBuilderOptions<TRequest>>(options =>
+            services.Configure<LambdaPipelineBuilderOptions>(options =>
             {
                options.ConfigurePipeline = app =>
                {
@@ -49,11 +42,23 @@ namespace Stackage.Aws.Lambda
          });
       }
 
-      public void UseHandler(Func<IServiceProvider, PipelineDelegate<TRequest>> handlerFactory)
+      public void UseHandler<THandler>()
+         where THandler : class, ILambdaHandler<Stream>
       {
          _builder.ConfigureServices(services =>
          {
-            services.AddScoped(handlerFactory);
+            services.AddTransient<ILambdaHandler<Stream>, THandler>();
+            services.AddTransient<ILambdaHandlerExecutor, StreamLambdaHandlerExecutor>();
+         });
+      }
+
+      public void UseHandler<THandler, TRequest>()
+         where THandler : class, ILambdaHandler<TRequest>
+      {
+         _builder.ConfigureServices(services =>
+         {
+            services.AddTransient<ILambdaHandler<TRequest>, THandler>();
+            services.AddTransient<ILambdaHandlerExecutor, LambdaHandlerExecutor<TRequest>>();
          });
       }
    }

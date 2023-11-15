@@ -3,7 +3,6 @@ using Amazon.Lambda.Serialization.SystemTextJson;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Stackage.Aws.Lambda;
-using Stackage.Aws.Lambda.Extensions;
 
 namespace Lambda.Basic.Example
 {

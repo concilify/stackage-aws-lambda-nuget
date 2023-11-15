@@ -1,7 +1,6 @@
 using System.Linq;
 using System.Threading.Tasks;
 using NUnit.Framework;
-using Stackage.Aws.Lambda.Extensions;
 using Stackage.Aws.Lambda.FakeRuntime.Model;
 using Stackage.Aws.Lambda.Tests.Handlers;
 

@@ -6,14 +6,14 @@ using Stackage.Aws.Lambda.Abstractions;
 
 namespace Stackage.Aws.Lambda
 {
-   public class LambdaListenerHostedService<TRequest> : BackgroundService
+   public class LambdaListenerHostedService : BackgroundService
    {
-      private readonly ILambdaListener<TRequest> _listener;
-      private readonly ILogger<LambdaListenerHostedService<TRequest>> _logger;
+      private readonly ILambdaListener _listener;
+      private readonly ILogger<LambdaListenerHostedService> _logger;
 
       public LambdaListenerHostedService(
-         ILambdaListener<TRequest> listener,
-         ILogger<LambdaListenerHostedService<TRequest>> logger)
+         ILambdaListener listener,
+         ILogger<LambdaListenerHostedService> logger)
       {
          _listener = listener;
          _logger = logger;

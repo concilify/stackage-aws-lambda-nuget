@@ -3,8 +3,8 @@ using Stackage.Aws.Lambda.Abstractions;
 
 namespace Stackage.Aws.Lambda
 {
-   public class LambdaPipelineBuilderOptions<TRequest>
+   public class LambdaPipelineBuilderOptions
    {
-      public Action<ILambdaPipelineBuilder<TRequest>>? ConfigurePipeline { get; set; }
+      public Action<ILambdaPipelineBuilder>? ConfigurePipeline { get; set; }
    }
 }

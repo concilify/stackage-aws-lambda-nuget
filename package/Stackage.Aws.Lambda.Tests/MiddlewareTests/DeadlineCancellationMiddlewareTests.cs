@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Threading.Tasks;
 using Amazon.Lambda.Core;
 using FakeItEasy;
@@ -11,7 +12,6 @@ using Stackage.Aws.Lambda.Abstractions;
 using Stackage.Aws.Lambda.Middleware;
 using Stackage.Aws.Lambda.Results;
 using Stackage.Aws.Lambda.Tests.Fakes;
-using Stackage.Aws.Lambda.Tests.Model;
 
 namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
 {
@@ -25,7 +25,7 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
          var middleware = CreateMiddleware();
 
          Task<ILambdaResult> InnerDelegate(
-            StringPoco request,
+            Stream request,
             ILambdaContext context,
             IServiceProvider requestServices)
          {
@@ -33,7 +33,7 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
          }
 
          var result = await middleware.InvokeAsync(
-            new StringPoco(),
+            new MemoryStream(),
             LambdaContextFake.Valid(),
             A.Fake<IServiceProvider>(),
             InnerDelegate);
@@ -66,7 +66,7 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
             resultFactory: resultFactory);
 
          async Task<ILambdaResult> LongRunningInnerDelegate(
-            StringPoco request,
+            Stream request,
             ILambdaContext context,
             IServiceProvider requestServices)
          {
@@ -78,7 +78,7 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
          var stopwatch = Stopwatch.StartNew();
 
          var result = await middleware.InvokeAsync(
-            new StringPoco(),
+            new MemoryStream(),
             LambdaContextFake.WithRemainingTime(TimeSpan.FromMilliseconds(remainingMs)),
             A.Fake<IServiceProvider>(),
             LongRunningInnerDelegate);
@@ -87,21 +87,21 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
          Assert.That(stopwatch.ElapsedMilliseconds, Is.LessThan(400));
       }
 
-      private static ILambdaMiddleware<StringPoco> CreateMiddleware(
+      private static ILambdaMiddleware CreateMiddleware(
          HostOptions hostOptions = null,
          IDeadlineCancellationInitializer cancellationInitializer = null,
          ILambdaResultFactory resultFactory = null,
-         ILogger<DeadlineCancellationMiddleware<StringPoco>> logger = null)
+         ILogger<DeadlineCancellationMiddleware> logger = null)
       {
          hostOptions ??= new HostOptions();
          cancellationInitializer ??= A.Fake<IDeadlineCancellationInitializer>();
          resultFactory ??= A.Fake<ILambdaResultFactory>();
-         logger ??= A.Fake<ILogger<DeadlineCancellationMiddleware<StringPoco>>>();
+         logger ??= A.Fake<ILogger<DeadlineCancellationMiddleware>>();
 
          var hostOptionsWrapper = A.Fake<IOptions<HostOptions>>();
          A.CallTo(() => hostOptionsWrapper.Value).Returns(hostOptions);
 
-         return new DeadlineCancellationMiddleware<StringPoco>(
+         return new DeadlineCancellationMiddleware(
             hostOptionsWrapper,
             cancellationInitializer,
             resultFactory,

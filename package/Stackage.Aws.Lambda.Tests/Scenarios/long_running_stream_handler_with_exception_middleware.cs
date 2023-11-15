@@ -1,10 +1,8 @@
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using NUnit.Framework;
-using Stackage.Aws.Lambda.Extensions;
 using Stackage.Aws.Lambda.FakeRuntime.Model;
 using Stackage.Aws.Lambda.Tests.Handlers;
 
@@ -20,7 +18,7 @@ namespace Stackage.Aws.Lambda.Tests.Scenarios
          var functions = await TestHost.RunAsync(
             builder =>
             {
-               builder.UseStartup<StartupWithDeadlineCancellation<Stream>>();
+               builder.UseStartup<StartupWithDeadlineCancellation>();
                builder.UseHandler<LongRunningStreamLambdaHandler>();
             },
             builder =>

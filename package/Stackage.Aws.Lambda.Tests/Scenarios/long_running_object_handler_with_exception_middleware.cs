@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using NUnit.Framework;
-using Stackage.Aws.Lambda.Extensions;
 using Stackage.Aws.Lambda.FakeRuntime.Model;
 using Stackage.Aws.Lambda.Tests.Handlers;
 using Stackage.Aws.Lambda.Tests.Model;
@@ -20,7 +19,7 @@ namespace Stackage.Aws.Lambda.Tests.Scenarios
          var functions = await TestHost.RunAsync<StringPoco>(
             builder =>
             {
-               builder.UseStartup<StartupWithDeadlineCancellation<StringPoco>>();
+               builder.UseStartup<StartupWithDeadlineCancellation>();
                builder.UseHandler<LongRunningObjectLambdaHandler, StringPoco>();
             },
             builder =>
