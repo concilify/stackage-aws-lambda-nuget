@@ -8,7 +8,6 @@ using NUnit.Framework;
 using Stackage.Aws.Lambda.Abstractions;
 using Stackage.Aws.Lambda.Middleware;
 using Stackage.Aws.Lambda.Tests.Fakes;
-using Stackage.Aws.Lambda.Tests.Model;
 
 namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
 {
