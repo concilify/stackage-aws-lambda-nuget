@@ -9,16 +9,13 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Stackage.Aws.Lambda.Abstractions;
 using Stackage.Aws.Lambda.Executors;
-using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace Stackage.Aws.Lambda;
 
 public class LambdaListenerBuilder
 {
-   /// <summary>
    /// The Lambda container freezes the process at a point where an HTTP request is in progress.
    /// We need to make sure we don't timeout waiting for the next invocation.
-   /// </summary>
    private static readonly TimeSpan RuntimeApiHttpTimeout = TimeSpan.FromHours(12);
 
    private readonly List<Action<IServiceCollection, IServiceProvider>> _configureServices = new();
@@ -98,9 +95,6 @@ public class LambdaListenerBuilder
       var runtimeApiClient = CreateRuntimeApiClient(serviceProvider);
       var lambdaSerializer = serviceProvider.GetRequiredService<ILambdaSerializer>();
       var logger = serviceProvider.GetRequiredService<ILogger<LambdaListener>>();
-      var l = serviceProvider.GetRequiredService<ILogger<LoggingHttpClientHandler>>();
-
-      var x = l.IsEnabled(LogLevel.Information);
 
       return new LambdaListener(
          runtimeApiClient,
@@ -124,8 +118,8 @@ public class LambdaListenerBuilder
    private static void ConfigureRuntimeHttpClient(HttpClient httpClient)
    {
       var dotnetRuntimeVersion = new DirectoryInfo(RuntimeEnvironment.GetRuntimeDirectory()).Name;
-      var amazonLambdaRuntimeSupport = typeof(LambdaBootstrap).Assembly.GetName().Version;
-      var userAgentString = $"aws-lambda-dotnet/{dotnetRuntimeVersion}-{amazonLambdaRuntimeSupport}";
+      var amazonLambdaRuntimeSupportVersion = typeof(LambdaBootstrap).Assembly.GetName().Version;
+      var userAgentString = $"aws-lambda-dotnet/{dotnetRuntimeVersion}-{amazonLambdaRuntimeSupportVersion}";
 
       httpClient.DefaultRequestHeaders.Add("User-Agent", userAgentString);
       httpClient.Timeout = RuntimeApiHttpTimeout;
