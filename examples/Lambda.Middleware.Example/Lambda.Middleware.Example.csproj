@@ -24,4 +24,8 @@
     <PackageReference Include="Stackage.Aws.Lambda" Version="0.9.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\package\Stackage.Aws.Lambda\Stackage.Aws.Lambda.csproj" />
+  </ItemGroup>
+
 </Project>

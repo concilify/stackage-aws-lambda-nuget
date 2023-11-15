@@ -1,32 +1,39 @@
-using System.Threading.Tasks;
 using Amazon.Lambda.Serialization.SystemTextJson;
+using Lambda.Middleware.Example;
 using Lambda.Middleware.Example.Handler;
 using Lambda.Middleware.Example.Model;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Stackage.Aws.Lambda;
 
-namespace Lambda.Middleware.Example
-{
-   public static class Program
-   {
-      public static async Task Main()
-      {
-         // TODO: How best to catch initialisation errors and send to the runtime API
+//namespace Lambda.Middleware.Example;
+// {
+//    public static class Program
+//    {
+//       public static async Task Main()
+//       {
+//          // TODO: How best to catch initialisation errors and send to the runtime API
+//
+//          var host = LambdaHost.Create(builder =>
+//             {
+//                builder.UseStartup<LambdaStartup>();
+//                builder.UseSerializer<CamelCaseLambdaJsonSerializer>();
+//                builder.UseHandler<ObjectLambdaHandler, InputPoco>();
+//             })
+//             .ConfigureLogging(builder =>
+//             {
+//                builder.AddJsonConsole();
+//             })
+//             .Build();
+//
+//          await host.RunAsync();
+//       }
+//    }
+// }
 
-         var host = LambdaHost.Create(builder =>
-            {
-               builder.UseStartup<LambdaStartup>();
-               builder.UseSerializer<CamelCaseLambdaJsonSerializer>();
-               builder.UseHandler<ObjectLambdaHandler, InputPoco>();
-            })
-            .ConfigureLogging(builder =>
-            {
-               builder.AddJsonConsole();
-            })
-            .Build();
+using var consoleLifetime = new ConsoleLifetime();
 
-         await host.RunAsync();
-      }
-   }
-}
+await new LambdaListenerBuilder()
+   .UseHandler<ObjectLambdaHandler, InputPoco>()
+   .UseStartup<LambdaStartup>()
+   .UseSerializer<CamelCaseLambdaJsonSerializer>()
+   .Build()
+   .ListenAsync(consoleLifetime.Token);
