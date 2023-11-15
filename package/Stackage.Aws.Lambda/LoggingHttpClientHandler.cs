@@ -34,6 +34,11 @@ namespace Stackage.Aws.Lambda
             {
                response = await base.SendAsync(request, cancellationToken);
             }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+               _logger.LogWarning("HTTP request cancelled {ElapsedMilliseconds}ms", stopwatch.ElapsedMilliseconds);
+               throw;
+            }
             catch (Exception e)
             {
                _logger.LogError(e, "HTTP request failed {ElapsedMilliseconds}ms", stopwatch.ElapsedMilliseconds);
