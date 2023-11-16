@@ -16,21 +16,21 @@ namespace Stackage.Aws.Lambda.Tests.Scenarios
       [OneTimeSetUp]
       public async Task setup_scenario()
       {
-         var functions = await TestHost.RunAsync<StringPoco>(
-            builder =>
+         var functions = await TestHost.RunAsync(
+            "my-function",
+            new LambdaRequest("req-id", "{\"value\":\"AnyString\"}"),
+            configureLambdaListener: builder =>
             {
                builder.UseStartup<StartupWithDeadlineCancellation>();
                builder.UseHandler<LongRunningObjectLambdaHandler, StringPoco>();
             },
-            builder =>
+            configureConfiguration: builder =>
             {
                builder.AddInMemoryCollection(new Dictionary<string, string>
                {
                   {"FAKERUNTIMEOPTIONS:DEADLINETIMEOUT", "00:00:01"}
                });
-            },
-            "my-function",
-            new LambdaRequest("req-id", "{\"value\":\"AnyString\"}"));
+            });
          _responses = functions.Single().Value.CompletedRequests;
       }
 
