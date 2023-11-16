@@ -3,32 +3,6 @@ using Amazon.Lambda.Serialization.SystemTextJson;
 using Lambda.Basic.Example;
 using Stackage.Aws.Lambda;
 
-// namespace Lambda.Basic.Example
-// {
-// {
-//    public static class Program
-//    {
-//       public static async Task Main()
-//       {
-//          // TODO: How best to catch initialisation errors and send to the runtime API
-//
-//          var host = LambdaHost.Create(builder =>
-//             {
-//                builder.UseSerializer<CamelCaseLambdaJsonSerializer>();
-//                builder.UseHandler<EchoLambdaHandler>();
-//             })
-//             .ConfigureLogging(builder =>
-//             {
-//                builder.AddJsonConsole();
-//             })
-//             .Build();
-//
-//          await host.RunAsync();
-//       }
-//    }
-// }
-//}
-
 using var consoleLifetime = new ConsoleLifetime();
 
 await new LambdaListenerBuilder()
