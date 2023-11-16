@@ -8,45 +8,39 @@ using Amazon.Lambda.Core;
 using Amazon.Lambda.RuntimeSupport;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Stackage.Aws.Lambda.Abstractions;
 
 namespace Stackage.Aws.Lambda
 {
-   public class LambdaListener : ILambdaListener
+   internal class LambdaListener : ILambdaListener
    {
-      private readonly ILambdaPipelineBuilder _pipelineBuilder;
       private readonly IRuntimeApiClient _runtimeApiClient;
       private readonly IServiceProvider _serviceProvider;
+      private readonly PipelineDelegate _pipelineAsync;
       private readonly ILambdaSerializer _serializer;
-      private readonly LambdaPipelineBuilderOptions _options;
       private readonly ILogger<LambdaListener> _logger;
 
       public LambdaListener(
-         ILambdaPipelineBuilder pipelineBuilder,
          IRuntimeApiClient runtimeApiClient,
          IServiceProvider serviceProvider,
-         IOptions<LambdaPipelineBuilderOptions> options,
+         PipelineDelegate pipelineAsync,
          ILambdaSerializer serializer,
          ILogger<LambdaListener> logger)
       {
-         _pipelineBuilder = pipelineBuilder;
          _runtimeApiClient = runtimeApiClient;
          _serviceProvider = serviceProvider;
+         _pipelineAsync = pipelineAsync;
          _serializer = serializer;
-         _options = options.Value;
          _logger = logger;
       }
 
       public async Task ListenAsync(CancellationToken cancellationToken)
       {
-         var pipelineAsync = InitialisePipeline();
-
          while (!cancellationToken.IsCancellationRequested)
          {
             try
             {
-               await WaitAndInvokeNextAsync(pipelineAsync, cancellationToken);
+               await WaitAndInvokeNextAsync(cancellationToken);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
@@ -54,20 +48,7 @@ namespace Stackage.Aws.Lambda
          }
       }
 
-      private PipelineDelegate InitialisePipeline()
-      {
-         _logger.LogDebug("Initialising pipeline");
-
-         _options.ConfigurePipeline?.Invoke(_pipelineBuilder);
-
-         var pipelineAsync = _pipelineBuilder.Build();
-
-         _logger.LogDebug("Pipeline initialised");
-
-         return pipelineAsync;
-      }
-
-      private async Task WaitAndInvokeNextAsync(PipelineDelegate pipelineAsync, CancellationToken cancellationToken)
+      private async Task WaitAndInvokeNextAsync(CancellationToken cancellationToken)
       {
          using var invocation = await _runtimeApiClient.GetNextInvocationAsync(cancellationToken);
 
@@ -83,7 +64,7 @@ namespace Stackage.Aws.Lambda
          {
             using var scope = _serviceProvider.CreateScope();
 
-            var lambdaResult = await pipelineAsync(invocation.InputStream, invocation.LambdaContext, scope.ServiceProvider);
+            var lambdaResult = await _pipelineAsync(invocation.InputStream, invocation.LambdaContext, scope.ServiceProvider);
 
             response = lambdaResult.SerializeResult(_serializer, invocation.LambdaContext);
          }
