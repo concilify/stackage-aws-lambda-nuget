@@ -14,14 +14,13 @@ namespace Stackage.Aws.Lambda.Tests.Scenarios
       [OneTimeSetUp]
       public async Task setup_scenario()
       {
-         var functions = await TestHost.RunAsync<StringPoco>(
-            builder =>
+         var functions = await TestHost.RunAsync(
+            "my-function",
+            new LambdaRequest("req-id", "{\"value\":\"AnyString\"}"),
+            configureLambdaListener: builder =>
             {
                builder.UseHandler<DecorateObjectLambdaHandler, StringPoco>();
-            },
-            null,
-            "my-function",
-            new LambdaRequest("req-id", "{\"value\":\"AnyString\"}"));
+            });
          _responses = functions.Single().Value.CompletedRequests;
       }
 
