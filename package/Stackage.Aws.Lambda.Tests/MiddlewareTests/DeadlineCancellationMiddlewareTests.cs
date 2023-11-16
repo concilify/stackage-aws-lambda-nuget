@@ -1,12 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using Amazon.Lambda.Core;
 using FakeItEasy;
-using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using NUnit.Framework;
 using Stackage.Aws.Lambda.Abstractions;
 using Stackage.Aws.Lambda.Middleware;
@@ -55,13 +55,18 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
          int shutdownMs,
          int remainingMs)
       {
-         var hostOptions = new HostOptions {ShutdownTimeout = TimeSpan.FromMilliseconds(shutdownMs)};
+         var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string>
+            {
+               ["ShutdownTimeoutMs"] = shutdownMs.ToString()
+            })
+            .Build();
          var expectedResult = A.Fake<ILambdaResult>();
          var deadlineCancellation = new DeadlineCancellation();
          var resultFactory = LambdaResultFactoryFake.WithRemainingTimeExpiredResult(expectedResult);
 
          var middleware = CreateMiddleware(
-            hostOptions: hostOptions,
+            configuration: configuration,
             cancellationInitializer: deadlineCancellation,
             resultFactory: resultFactory);
 
@@ -88,21 +93,18 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
       }
 
       private static ILambdaMiddleware CreateMiddleware(
-         HostOptions hostOptions = null,
+         IConfiguration configuration = null,
          IDeadlineCancellationInitializer cancellationInitializer = null,
          ILambdaResultFactory resultFactory = null,
          ILogger<DeadlineCancellationMiddleware> logger = null)
       {
-         hostOptions ??= new HostOptions();
+         configuration ??= new ConfigurationBuilder().Build();
          cancellationInitializer ??= A.Fake<IDeadlineCancellationInitializer>();
          resultFactory ??= A.Fake<ILambdaResultFactory>();
          logger ??= A.Fake<ILogger<DeadlineCancellationMiddleware>>();
 
-         var hostOptionsWrapper = A.Fake<IOptions<HostOptions>>();
-         A.CallTo(() => hostOptionsWrapper.Value).Returns(hostOptions);
-
          return new DeadlineCancellationMiddleware(
-            hostOptionsWrapper,
+            configuration,
             cancellationInitializer,
             resultFactory,
             logger);
