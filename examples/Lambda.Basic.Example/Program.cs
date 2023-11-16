@@ -1,5 +1,4 @@
-﻿using System.Threading.Tasks;
-using Amazon.Lambda.Serialization.SystemTextJson;
+﻿using Amazon.Lambda.Serialization.SystemTextJson;
 using Lambda.Basic.Example;
 using Stackage.Aws.Lambda;
 
