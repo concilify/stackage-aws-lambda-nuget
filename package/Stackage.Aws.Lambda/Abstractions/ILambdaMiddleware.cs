@@ -9,7 +9,7 @@ namespace Stackage.Aws.Lambda.Abstractions
    public interface ILambdaMiddleware
    {
       Task<ILambdaResult> InvokeAsync(
-         Stream request,
+         Stream inputStream,
          ILambdaContext context,
          IServiceProvider requestServices,
          PipelineDelegate next,

@@ -22,7 +22,7 @@ namespace Stackage.Aws.Lambda.Middleware
       }
 
       public async Task<ILambdaResult> InvokeAsync(
-         Stream request,
+         Stream inputStream,
          ILambdaContext context,
          IServiceProvider requestServices,
          PipelineDelegate next,
@@ -30,7 +30,7 @@ namespace Stackage.Aws.Lambda.Middleware
       {
          try
          {
-            return await next(request, context, requestServices, cancellationToken);
+            return await next(inputStream, context, requestServices, cancellationToken);
          }
          catch (Exception e)
          {

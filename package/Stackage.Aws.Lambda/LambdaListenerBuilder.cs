@@ -78,6 +78,10 @@ public class LambdaListenerBuilder
 
       services.AddSingleton(hostServiceProvider.HostEnvironment);
       services.AddSingleton(hostServiceProvider.Configuration);
+
+      services.AddTransient<ILambdaRuntime, LambdaRuntime>();
+      services.AddTransient<IRuntimeApiClient>(CreateRuntimeApiClient);
+
       services.AddLogging(builder =>
       {
          builder.AddConfiguration(hostServiceProvider.Configuration.GetSection("Logging"));
@@ -92,12 +96,12 @@ public class LambdaListenerBuilder
 
       var serviceProvider = services.BuildServiceProvider();
 
-      var runtimeApiClient = CreateRuntimeApiClient(serviceProvider);
+      var lambdaRuntime = serviceProvider.GetRequiredService<ILambdaRuntime>();
       var lambdaSerializer = serviceProvider.GetRequiredService<ILambdaSerializer>();
       var logger = serviceProvider.GetRequiredService<ILogger<LambdaListener>>();
 
       return new LambdaListener(
-         runtimeApiClient,
+         lambdaRuntime,
          serviceProvider,
          _pipelineBuilder.Build(),
          lambdaSerializer,

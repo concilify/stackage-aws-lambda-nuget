@@ -3,12 +3,10 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Amazon.Lambda.Core;
-using Amazon.Lambda.RuntimeSupport;
 using FakeItEasy;
 using Microsoft.Extensions.Logging.Abstractions;
 using NUnit.Framework;
 using Stackage.Aws.Lambda.Abstractions;
-using Stackage.Aws.Lambda.Results;
 using Stackage.Aws.Lambda.Tests.Fakes;
 
 namespace Stackage.Aws.Lambda.Tests;
@@ -16,16 +14,26 @@ namespace Stackage.Aws.Lambda.Tests;
 public class LambdaListenerTests
 {
    [Test]
-   public async Task fff()
+   public async Task cancellation_token_is_passed_to_wait_for_invocation()
    {
-      var cancellationToken = new CancellationToken(true);
+      var cancellationTokenSource = new CancellationTokenSource();
 
+      var lambdaRuntime = LambdaRuntimeFake.WaitForInvocationCallback(
+         cancellationToken =>
+         {
+            Assert.That(cancellationToken.IsCancellationRequested, Is.False);
+            cancellationTokenSource.Cancel();
+            Assert.That(cancellationToken.IsCancellationRequested, Is.True);
+         });
 
-      Assert.That(cancellationToken, Is.SameAs(cancellationToken));
+      var lambdaListener = CreateLambdaListener(
+         lambdaRuntime: lambdaRuntime);
+
+      await lambdaListener.ListenAsync(cancellationTokenSource.Token);
    }
 
    [Test]
-   public async Task non_cancelled_cancellation_token_is_passed_to_pipeline()
+   public async Task cancellation_token_is_passed_to_pipeline()
    {
       Task<ILambdaResult> CapturingPipelineDelegate(
          Stream stream, ILambdaContext context, IServiceProvider serviceProvider, CancellationToken cancellationToken)
@@ -39,19 +47,62 @@ public class LambdaListenerTests
          pipelineAsync: CapturingPipelineDelegate);
 
       await lambdaListener.ListenAsync(new CancellationToken(false));
+
+      Assert.Fail();
+   }
+
+   [Test]
+   public async Task cancellation_token_is_passed_to_reply_with_success()
+   {
+      var cancellationTokenSource = new CancellationTokenSource();
+
+      var lambdaRuntime = LambdaRuntimeFake.ReplyWithInvocationSuccessCallback(
+         (_, _, cancellationToken) =>
+         {
+            Assert.That(cancellationToken.IsCancellationRequested, Is.False);
+            cancellationTokenSource.Cancel();
+            Assert.That(cancellationToken.IsCancellationRequested, Is.True);
+         });
+
+      var lambdaListener = CreateLambdaListener(
+         lambdaRuntime: lambdaRuntime);
+
+      await lambdaListener.ListenAsync(cancellationTokenSource.Token);
+   }
+
+   [Test]
+   public async Task cancellation_token_is_passed_to_reply_with_failure()
+   {
+      var exceptionToThrow = new Exception();
+      var cancellationTokenSource = new CancellationTokenSource();
+
+      var lambdaRuntime = LambdaRuntimeFake.ReplyWithInvocationFailureCallback(
+         (exception, _, cancellationToken) =>
+         {
+            Assert.That(exception, Is.SameAs(exceptionToThrow));
+            Assert.That(cancellationToken.IsCancellationRequested, Is.False);
+            cancellationTokenSource.Cancel();
+            Assert.That(cancellationToken.IsCancellationRequested, Is.True);
+         });
+
+      var lambdaListener = CreateLambdaListener(
+         lambdaRuntime: lambdaRuntime,
+         pipelineAsync: PipelineDelegateFake.Throws(exceptionToThrow));
+
+      await lambdaListener.ListenAsync(cancellationTokenSource.Token);
    }
 
    private static LambdaListener CreateLambdaListener(
-      IRuntimeApiClient runtimeApiClient = null,
+      ILambdaRuntime lambdaRuntime = null,
       IServiceProvider serviceProvider = null,
       PipelineDelegate pipelineAsync = null)
    {
-      runtimeApiClient ??= RuntimeApiClientFake.Valid();
-      serviceProvider ??= A.Fake<IServiceProvider>();
-      pipelineAsync ??= (_, _, _, _) => Task.FromResult<ILambdaResult>(new StringResult("ValidResult"));
+      lambdaRuntime ??= LambdaRuntimeFake.Valid();
+      serviceProvider ??= ServiceProviderFake.Valid();
+      pipelineAsync ??= PipelineDelegateFake.Valid();
 
       return new LambdaListener(
-         runtimeApiClient,
+         lambdaRuntime,
          serviceProvider,
          pipelineAsync,
          A.Fake<ILambdaSerializer>(),
