@@ -7,16 +7,16 @@ namespace Stackage.Aws.Lambda.Results
 {
    public class StreamResult : ILambdaResult
    {
-      private readonly Stream _stream;
+      private readonly Stream _outputStream;
 
-      public StreamResult(Stream stream)
+      public StreamResult(Stream outputStream)
       {
-         _stream = stream ?? throw new ArgumentNullException(nameof(stream));
+         _outputStream = outputStream ?? throw new ArgumentNullException(nameof(outputStream));
       }
 
       public Stream SerializeResult(ILambdaSerializer serializer, ILambdaContext context)
       {
-         return _stream;
+         return _outputStream;
       }
    }
 }

@@ -51,7 +51,7 @@ You can use constructor injection to inject your services into the handler. A ba
 ```cs
    public class MyLambdaHandler : ILambdaHandler<MyRequest>
    {
-      public async Task<ILambdaResult> HandleAsync(MyRequest request, ILambdaContext context)
+      public async Task<ILambdaResult> HandleAsync(MyRequest input, ILambdaContext context)
       {
          return new StringResult("Greetings!");
       }

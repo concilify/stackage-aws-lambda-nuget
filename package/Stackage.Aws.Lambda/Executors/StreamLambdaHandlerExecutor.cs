@@ -14,8 +14,8 @@ internal class StreamLambdaHandlerExecutor : ILambdaHandlerExecutor
       _handler = handler;
    }
 
-   public async Task<ILambdaResult> ExecuteAsync(Stream request, ILambdaContext context)
+   public async Task<ILambdaResult> ExecuteAsync(Stream inputStream, ILambdaContext context)
    {
-      return await _handler.HandleAsync(request, context);
+      return await _handler.HandleAsync(inputStream, context);
    }
 }

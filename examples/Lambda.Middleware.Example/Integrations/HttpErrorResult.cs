@@ -28,12 +28,12 @@ namespace Lambda.Middleware.Example.Integrations
             Body = _message
          };
 
-         var responseStream = new MemoryStream();
+         var outputStream = new MemoryStream();
 
-         serializer.Serialize(response, responseStream);
-         responseStream.Position = 0;
+         serializer.Serialize(response, outputStream);
+         outputStream.Position = 0;
 
-         return responseStream;
+         return outputStream;
       }
    }
 }

@@ -21,7 +21,7 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
          var middleware = CreateMiddleware();
 
          Task<ILambdaResult> InnerDelegate(
-            Stream request,
+            Stream inputStream,
             ILambdaContext context,
             IServiceProvider requestServices)
          {
@@ -48,7 +48,7 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
          var middleware = CreateMiddleware(resultFactory: resultFactory);
 
          Task<ILambdaResult> InnerDelegate(
-            Stream request,
+            Stream inputStream,
             ILambdaContext context,
             IServiceProvider requestServices)
          {
