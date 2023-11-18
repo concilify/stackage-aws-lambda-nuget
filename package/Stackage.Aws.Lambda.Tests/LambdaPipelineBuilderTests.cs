@@ -16,25 +16,18 @@ public class LambdaPipelineBuilderTests
 
       var pipelineAsync = builder.Build();
 
-      await pipelineAsync(
-         new MemoryStream(),
-         LambdaContextFake.Valid(),
-         ServiceProviderFake.Returns(),
-         cancellationTokenSource.Token);
-
-         /*
-          *       var pipelineAsync = PipelineDelegateFake.Callback(
-         (_, _, _, cancellationToken) =>
+      var handlerExecutor = LambdaHandlerExecutorFake.ExecuteCallback(
+         (_, _, cancellationToken) =>
          {
             Assert.That(cancellationToken.IsCancellationRequested, Is.False);
             cancellationTokenSource.Cancel();
             Assert.That(cancellationToken.IsCancellationRequested, Is.True);
          });
 
-
-          */
-         //            var handlerExecutor = requestServices.GetService<ILambdaHandlerExecutor>();
-
-      Assert.Fail();
+      await pipelineAsync(
+         new MemoryStream(),
+         LambdaContextFake.Valid(),
+         ServiceProviderFake.Returns(handlerExecutor),
+         cancellationTokenSource.Token);
    }
 }

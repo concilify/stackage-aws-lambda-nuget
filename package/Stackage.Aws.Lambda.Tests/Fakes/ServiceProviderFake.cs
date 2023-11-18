@@ -1,6 +1,5 @@
 using System;
 using FakeItEasy;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Stackage.Aws.Lambda.Tests.Fakes;
 

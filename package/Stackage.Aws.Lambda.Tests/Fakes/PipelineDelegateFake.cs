@@ -3,7 +3,6 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Amazon.Lambda.Core;
-using FakeItEasy;
 using Stackage.Aws.Lambda.Abstractions;
 using Stackage.Aws.Lambda.Results;
 

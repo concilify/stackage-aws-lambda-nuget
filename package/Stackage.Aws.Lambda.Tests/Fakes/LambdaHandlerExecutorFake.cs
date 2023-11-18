@@ -7,9 +7,9 @@ using Stackage.Aws.Lambda.Executors;
 
 namespace Stackage.Aws.Lambda.Tests.Fakes;
 
-public static class LambdaHandlerExecutorFake
+internal static class LambdaHandlerExecutorFake
 {
-   public static ILambdaHandlerExecutor ReplyWithInvocationSuccessCallback(Action<Stream, ILambdaContext, CancellationToken> callback)
+   public static ILambdaHandlerExecutor ExecuteCallback(Action<Stream, ILambdaContext, CancellationToken> callback)
    {
       var handlerExecutor = A.Fake<ILambdaHandlerExecutor>();
 
@@ -18,8 +18,4 @@ public static class LambdaHandlerExecutorFake
 
       return handlerExecutor;
    }
-
-   /*
-    *
-    */
 }
