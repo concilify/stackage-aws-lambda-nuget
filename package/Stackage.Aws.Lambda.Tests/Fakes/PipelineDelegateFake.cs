@@ -10,9 +10,11 @@ namespace Stackage.Aws.Lambda.Tests.Fakes;
 
 public static class PipelineDelegateFake
 {
-   public static PipelineDelegate Valid()
+   public static PipelineDelegate Valid() => Returns(new StringResult("ValidResult"));
+
+   public static PipelineDelegate Returns(ILambdaResult lambdaResult)
    {
-      return  (_, _, _, _) => Task.FromResult<ILambdaResult>(new StringResult("ValidResult"));
+      return  (_, _, _, _) => Task.FromResult(lambdaResult);
    }
 
    public static PipelineDelegate Callback(Action<Stream, ILambdaContext, IServiceProvider, CancellationToken> callback)
@@ -22,6 +24,16 @@ public static class PipelineDelegateFake
          callback(stream, context, serviceProvider, cancellationToken);
 
          return Task.FromResult<ILambdaResult>(new StringResult("ValidResult"));
+      };
+   }
+
+   public static PipelineDelegate AsyncCallback(Func<Stream, ILambdaContext, IServiceProvider, CancellationToken, Task> callback)
+   {
+      return async (stream, context, serviceProvider, cancellationToken) =>
+      {
+         await callback(stream, context, serviceProvider, cancellationToken);
+
+         return new StringResult("ValidResult");
       };
    }
 
