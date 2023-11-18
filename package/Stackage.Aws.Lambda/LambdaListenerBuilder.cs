@@ -33,13 +33,13 @@ public class LambdaListenerBuilder
       return this;
    }
 
-   public LambdaListenerBuilder UseHandler<THandler, TRequest>()
-      where THandler : class, ILambdaHandler<TRequest>
+   public LambdaListenerBuilder UseHandler<THandler, TInput>()
+      where THandler : class, ILambdaHandler<TInput>
    {
       _configureServices.Add((services, _) =>
       {
-         services.AddTransient<ILambdaHandler<TRequest>, THandler>();
-         services.AddTransient<ILambdaHandlerExecutor, LambdaHandlerExecutor<TRequest>>();
+         services.AddTransient<ILambdaHandler<TInput>, THandler>();
+         services.AddTransient<ILambdaHandlerExecutor, LambdaHandlerExecutor<TInput>>();
       });
 
       return this;

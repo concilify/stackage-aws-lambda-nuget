@@ -8,9 +8,9 @@ namespace Stackage.Aws.Lambda.Tests.Handlers
 {
    public class DecorateStreamLambdaHandler : ILambdaHandler<Stream>
    {
-      public async Task<ILambdaResult> HandleAsync(Stream request, ILambdaContext context)
+      public async Task<ILambdaResult> HandleAsync(Stream inputStream, ILambdaContext context)
       {
-         var response = $"[{await request.ReadToEndAsync()}]";
+         var response = $"[{await inputStream.ReadToEndAsync()}]";
 
          return new StreamResult(response.ToStream());
       }

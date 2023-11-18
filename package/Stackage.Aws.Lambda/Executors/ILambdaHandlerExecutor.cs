@@ -9,7 +9,7 @@ namespace Stackage.Aws.Lambda.Executors;
 internal interface ILambdaHandlerExecutor
 {
    Task<ILambdaResult> ExecuteAsync(
-      Stream request,
+      Stream inputStream,
       ILambdaContext context,
       CancellationToken cancellationToken = default);
 }
