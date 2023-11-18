@@ -26,7 +26,7 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
          var middleware = CreateMiddleware();
 
          Task<ILambdaResult> InnerDelegate(
-            Stream request,
+            Stream inputStream,
             ILambdaContext context,
             IServiceProvider requestServices,
             CancellationToken cancellationToken)
@@ -73,7 +73,7 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
             resultFactory: resultFactory);
 
          async Task<ILambdaResult> LongRunningInnerDelegate(
-            Stream request,
+            Stream inputStream,
             ILambdaContext context,
             IServiceProvider requestServices,
             CancellationToken cancellationToken)
@@ -93,6 +93,18 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
 
          Assert.That(result, Is.SameAs(expectedResult));
          Assert.That(stopwatch.ElapsedMilliseconds, Is.LessThan(400));
+      }
+
+      [Test]
+      public void cancellation_token_passed_to_inner_delegate_can_be_cancelled_by_lack_of_time_remaining()
+      {
+         Assert.Fail();
+      }
+
+      [Test]
+      public void cancellation_token_passed_to_inner_delegate_can_be_cancelled_by_incoming_cancellation_token()
+      {
+         Assert.Fail();
       }
 
       private static ILambdaMiddleware CreateMiddleware(

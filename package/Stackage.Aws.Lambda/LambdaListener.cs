@@ -66,7 +66,8 @@ namespace Stackage.Aws.Lambda
          {
             using var scope = _serviceProvider.CreateScope();
 
-            var lambdaResult = await _pipelineAsync(invocation.InputStream, invocation.Context, scope.ServiceProvider);
+            var lambdaResult = await _pipelineAsync(
+               invocation.InputStream, invocation.Context, scope.ServiceProvider, cancellationToken);
 
             outputStream = lambdaResult.SerializeResult(_serializer, invocation.Context);
          }

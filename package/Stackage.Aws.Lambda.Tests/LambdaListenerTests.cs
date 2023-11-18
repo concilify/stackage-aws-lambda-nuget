@@ -35,20 +35,20 @@ public class LambdaListenerTests
    [Test]
    public async Task cancellation_token_is_passed_to_pipeline()
    {
-      Task<ILambdaResult> CapturingPipelineDelegate(
-         Stream stream, ILambdaContext context, IServiceProvider serviceProvider, CancellationToken cancellationToken)
-      {
-         Assert.That(cancellationToken.IsCancellationRequested, Is.False);
+      var cancellationTokenSource = new CancellationTokenSource();
 
-         throw new NotSupportedException();
-      }
+      var pipelineAsync = PipelineDelegateFake.Callback(
+         (_, _, _, cancellationToken) =>
+         {
+            Assert.That(cancellationToken.IsCancellationRequested, Is.False);
+            cancellationTokenSource.Cancel();
+            Assert.That(cancellationToken.IsCancellationRequested, Is.True);
+         });
 
       var lambdaListener = CreateLambdaListener(
-         pipelineAsync: CapturingPipelineDelegate);
+         pipelineAsync: pipelineAsync);
 
-      await lambdaListener.ListenAsync(new CancellationToken(false));
-
-      Assert.Fail();
+      await lambdaListener.ListenAsync(cancellationTokenSource.Token);
    }
 
    [Test]

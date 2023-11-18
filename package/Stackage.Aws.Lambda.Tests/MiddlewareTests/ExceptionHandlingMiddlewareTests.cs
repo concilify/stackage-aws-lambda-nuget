@@ -6,6 +6,7 @@ using Amazon.Lambda.Core;
 using FakeItEasy;
 using Microsoft.Extensions.Logging;
 using NUnit.Framework;
+using NUnit.Framework.Internal;
 using Stackage.Aws.Lambda.Abstractions;
 using Stackage.Aws.Lambda.Middleware;
 using Stackage.Aws.Lambda.Tests.Fakes;
@@ -37,6 +38,12 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
             InnerDelegate);
 
          Assert.That(result, Is.SameAs(expectedResult));
+      }
+
+      [Test]
+      public void cancellation_token_is_passed_to_inner_delegate()
+      {
+         Assert.Fail();
       }
 
       [Test]
