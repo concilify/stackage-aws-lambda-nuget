@@ -19,7 +19,7 @@ namespace Lambda.Middleware.Example.Middleware
       }
 
       public async Task<ILambdaResult> InvokeAsync(
-         Stream request,
+         Stream inputStream,
          ILambdaContext context,
          IServiceProvider requestServices,
          PipelineDelegate next)
@@ -32,7 +32,7 @@ namespace Lambda.Middleware.Example.Middleware
 
             try
             {
-               return await next(request, context, requestServices);
+               return await next(inputStream, context, requestServices);
             }
             finally
             {

@@ -5,7 +5,6 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Amazon.Lambda.Core;
-using Amazon.Lambda.RuntimeSupport;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Stackage.Aws.Lambda.Abstractions;
@@ -14,20 +13,20 @@ namespace Stackage.Aws.Lambda
 {
    internal class LambdaListener : ILambdaListener
    {
-      private readonly IRuntimeApiClient _runtimeApiClient;
+      private readonly ILambdaRuntime _lambdaRuntime;
       private readonly IServiceProvider _serviceProvider;
       private readonly PipelineDelegate _pipelineAsync;
       private readonly ILambdaSerializer _serializer;
       private readonly ILogger<LambdaListener> _logger;
 
       public LambdaListener(
-         IRuntimeApiClient runtimeApiClient,
+         ILambdaRuntime lambdaRuntime,
          IServiceProvider serviceProvider,
          PipelineDelegate pipelineAsync,
          ILambdaSerializer serializer,
          ILogger<LambdaListener> logger)
       {
-         _runtimeApiClient = runtimeApiClient;
+         _lambdaRuntime = lambdaRuntime;
          _serviceProvider = serviceProvider;
          _pipelineAsync = pipelineAsync;
          _serializer = serializer;
@@ -50,29 +49,32 @@ namespace Stackage.Aws.Lambda
 
       private async Task WaitAndInvokeNextAsync(CancellationToken cancellationToken)
       {
-         using var invocation = await _runtimeApiClient.GetNextInvocationAsync(cancellationToken);
+         using var invocation = await _lambdaRuntime.WaitForInvocationAsync(cancellationToken);
 
          var stopwatch = Stopwatch.StartNew();
 
-         using var _ = _logger.BeginScope(new Dictionary<string, object> {{"AwsRequestId", invocation.LambdaContext.AwsRequestId}});
+         using var _ = _logger.BeginScope(new Dictionary<string, object>
+         {
+            ["AwsRequestId"] = invocation.Context.AwsRequestId
+         });
 
          _logger.LogInformation("Handling request");
 
-         Stream response;
+         Stream outputStream;
 
          try
          {
             using var scope = _serviceProvider.CreateScope();
 
-            var lambdaResult = await _pipelineAsync(invocation.InputStream, invocation.LambdaContext, scope.ServiceProvider);
+            var lambdaResult = await _pipelineAsync(invocation.InputStream, invocation.Context, scope.ServiceProvider);
 
-            response = lambdaResult.SerializeResult(_serializer, invocation.LambdaContext);
+            outputStream = lambdaResult.SerializeResult(_serializer, invocation.Context);
          }
          catch (Exception e)
          {
             _logger.LogError(e, "Request handler failed {ElapsedMilliseconds}ms", stopwatch.ElapsedMilliseconds);
 
-            await _runtimeApiClient.ReportInvocationErrorAsync(invocation.LambdaContext.AwsRequestId, e, CancellationToken.None);
+            await _lambdaRuntime.ReplyWithInvocationFailureAsync(e, invocation.Context, cancellationToken);
             return;
          }
 
@@ -80,11 +82,11 @@ namespace Stackage.Aws.Lambda
          {
             _logger.LogInformation("Request handler completed {ElapsedMilliseconds}ms", stopwatch.ElapsedMilliseconds);
 
-            await _runtimeApiClient.SendResponseAsync(invocation.LambdaContext.AwsRequestId, response, CancellationToken.None);
+            await _lambdaRuntime.ReplyWithInvocationSuccessAsync(outputStream, invocation.Context, cancellationToken);
          }
          finally
          {
-            await response.DisposeAsync();
+            await outputStream.DisposeAsync();
          }
       }
    }

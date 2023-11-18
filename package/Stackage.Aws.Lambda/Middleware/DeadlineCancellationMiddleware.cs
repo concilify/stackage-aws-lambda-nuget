@@ -30,7 +30,7 @@ namespace Stackage.Aws.Lambda.Middleware
       }
 
       public async Task<ILambdaResult> InvokeAsync(
-         Stream request,
+         Stream inputStream,
          ILambdaContext context,
          IServiceProvider requestServices,
          PipelineDelegate next)
@@ -43,7 +43,7 @@ namespace Stackage.Aws.Lambda.Middleware
 
          try
          {
-            return await next(request, context, requestServices);
+            return await next(inputStream, context, requestServices);
          }
          catch (OperationCanceledException) when (requestAborted.IsCancellationRequested)
          {
