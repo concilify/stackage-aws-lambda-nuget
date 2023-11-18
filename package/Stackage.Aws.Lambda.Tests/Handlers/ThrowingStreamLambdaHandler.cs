@@ -8,7 +8,7 @@ namespace Stackage.Aws.Lambda.Tests.Handlers
 {
    public class ThrowingStreamLambdaHandler : ILambdaHandler<Stream>
    {
-      public Task<ILambdaResult> HandleAsync(Stream inputStream, ILambdaContext context)
+      public Task<ILambdaResult> HandleAsync(Stream input, ILambdaContext context)
       {
          throw new Exception("ThrowingStreamLambdaHandler failed");
       }

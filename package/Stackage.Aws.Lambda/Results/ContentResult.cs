@@ -15,12 +15,12 @@ namespace Stackage.Aws.Lambda.Results
 
       public Stream SerializeResult(ILambdaSerializer serializer, ILambdaContext context)
       {
-         var responseStream = new MemoryStream();
+         var outputStream = new MemoryStream();
 
-         serializer.Serialize(_content, responseStream);
-         responseStream.Position = 0;
+         serializer.Serialize(_content, outputStream);
+         outputStream.Position = 0;
 
-         return responseStream;
+         return outputStream;
       }
    }
 }
