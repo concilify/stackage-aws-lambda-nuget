@@ -7,5 +7,5 @@ namespace Stackage.Aws.Lambda.Executors;
 
 internal interface ILambdaHandlerExecutor
 {
-   Task<ILambdaResult> ExecuteAsync(Stream request, ILambdaContext context);
+   Task<ILambdaResult> ExecuteAsync(Stream inputStream, ILambdaContext context);
 }

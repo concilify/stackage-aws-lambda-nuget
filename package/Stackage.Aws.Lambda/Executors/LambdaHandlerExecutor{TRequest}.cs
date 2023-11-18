@@ -5,23 +5,23 @@ using Stackage.Aws.Lambda.Abstractions;
 
 namespace Stackage.Aws.Lambda.Executors;
 
-internal class LambdaHandlerExecutor<TRequest> : ILambdaHandlerExecutor
+internal class LambdaHandlerExecutor<TInput> : ILambdaHandlerExecutor
 {
    private readonly ILambdaSerializer _serializer;
-   private readonly ILambdaHandler<TRequest> _handler;
+   private readonly ILambdaHandler<TInput> _handler;
 
    public LambdaHandlerExecutor(
       ILambdaSerializer serializer,
-      ILambdaHandler<TRequest> handler)
+      ILambdaHandler<TInput> handler)
    {
       _serializer = serializer;
       _handler = handler;
    }
 
-   public async Task<ILambdaResult> ExecuteAsync(Stream request, ILambdaContext context)
+   public async Task<ILambdaResult> ExecuteAsync(Stream inputStream, ILambdaContext context)
    {
-      var deserializedRequest = _serializer.Deserialize<TRequest>(request);
+      var inputObject = _serializer.Deserialize<TInput>(inputStream);
 
-      return await _handler.HandleAsync(deserializedRequest, context);
+      return await _handler.HandleAsync(inputObject, context);
    }
 }

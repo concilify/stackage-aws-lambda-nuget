@@ -16,19 +16,19 @@ namespace Lambda.Middleware.Example.Handler
          _deadlineCancellation = deadlineCancellation;
       }
 
-      public async Task<ILambdaResult> HandleAsync(InputPoco request, ILambdaContext context)
+      public async Task<ILambdaResult> HandleAsync(InputPoco input, ILambdaContext context)
       {
-         if (request.Action == "throw")
+         if (input.Action == "throw")
          {
             throw new Exception("Throwing exception from ObjectLambdaHandler");
          }
 
-         if (request.Action == "delay")
+         if (input.Action == "delay")
          {
             await Task.Delay(1000, _deadlineCancellation.Token);
          }
 
-         return new HttpContentResult<OutputPoco>(new OutputPoco {Action = request.Action});
+         return new HttpContentResult<OutputPoco>(new OutputPoco {Action = input.Action});
       }
    }
 }
