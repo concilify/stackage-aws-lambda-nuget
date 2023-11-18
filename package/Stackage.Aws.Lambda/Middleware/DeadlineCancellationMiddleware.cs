@@ -33,7 +33,8 @@ namespace Stackage.Aws.Lambda.Middleware
          Stream request,
          ILambdaContext context,
          IServiceProvider requestServices,
-         PipelineDelegate next)
+         PipelineDelegate next,
+         CancellationToken cancellationToken = default)
       {
          var effectiveRemainingTimeMs = GetEffectiveRemainingTimeMs(context);
 
@@ -43,7 +44,7 @@ namespace Stackage.Aws.Lambda.Middleware
 
          try
          {
-            return await next(request, context, requestServices);
+            return await next(request, context, requestServices, cancellationToken);
          }
          catch (OperationCanceledException) when (requestAborted.IsCancellationRequested)
          {

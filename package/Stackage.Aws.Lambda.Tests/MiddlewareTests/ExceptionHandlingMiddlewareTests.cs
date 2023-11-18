@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Amazon.Lambda.Core;
 using FakeItEasy;
@@ -23,7 +24,8 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
          Task<ILambdaResult> InnerDelegate(
             Stream request,
             ILambdaContext context,
-            IServiceProvider requestServices)
+            IServiceProvider requestServices,
+            CancellationToken cancellationToken)
          {
             return Task.FromResult(expectedResult);
          }
@@ -50,7 +52,8 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
          Task<ILambdaResult> InnerDelegate(
             Stream request,
             ILambdaContext context,
-            IServiceProvider requestServices)
+            IServiceProvider requestServices,
+            CancellationToken cancellationToken)
          {
             throw exceptionToThrow;
          }

@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Amazon.Lambda.Core;
 using Microsoft.Extensions.Logging;
@@ -24,11 +25,12 @@ namespace Stackage.Aws.Lambda.Middleware
          Stream request,
          ILambdaContext context,
          IServiceProvider requestServices,
-         PipelineDelegate next)
+         PipelineDelegate next,
+         CancellationToken cancellationToken = default)
       {
          try
          {
-            return await next(request, context, requestServices);
+            return await next(request, context, requestServices, cancellationToken);
          }
          catch (Exception e)
          {

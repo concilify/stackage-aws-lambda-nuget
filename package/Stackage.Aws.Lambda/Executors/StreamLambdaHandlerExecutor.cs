@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Amazon.Lambda.Core;
 using Stackage.Aws.Lambda.Abstractions;
@@ -14,7 +15,7 @@ internal class StreamLambdaHandlerExecutor : ILambdaHandlerExecutor
       _handler = handler;
    }
 
-   public async Task<ILambdaResult> ExecuteAsync(Stream request, ILambdaContext context)
+   public async Task<ILambdaResult> ExecuteAsync(Stream request, ILambdaContext context, CancellationToken cancellationToken = default)
    {
       return await _handler.HandleAsync(request, context);
    }
