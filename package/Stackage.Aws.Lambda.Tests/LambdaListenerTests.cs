@@ -93,18 +93,12 @@ public class LambdaListenerTests
       var lambdaResult = A.Fake<ILambdaResult>();
 
       var context = LambdaContextFake.Valid();
-      var lambdaRuntime = LambdaRuntimeFake.WaitForInvocationCallback(token =>
-      {
-         cancellationTokenSource.Cancel();
-         return new LambdaInvocation(new MemoryStream(), context);
-      });
       var pipelineAsync = PipelineDelegateFake.Returns(lambdaResult);
 
       var lambdaListener = CreateLambdaListener(
-         lambdaRuntime: lambdaRuntime,
          pipelineAsync: pipelineAsync);
 
-      await lambdaListener.ListenAsync(cancellationTokenSource.Token);
+      await lambdaListener.InvokeAndReplyAsync(new LambdaInvocation(new MemoryStream(), context), cancellationTokenSource.Token);
 
       A.CallTo(() => lambdaResult.ExecuteResultAsync(context, A<IServiceProvider>._))
          .MustHaveHappenedOnceExactly();
