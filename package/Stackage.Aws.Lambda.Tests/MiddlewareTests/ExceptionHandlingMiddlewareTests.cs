@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using NUnit.Framework;
 using Stackage.Aws.Lambda.Abstractions;
 using Stackage.Aws.Lambda.Middleware;
+using Stackage.Aws.Lambda.Results;
 using Stackage.Aws.Lambda.Tests.Fakes;
 
 namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
@@ -28,7 +29,8 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
             new MemoryStream(),
             A.Fake<ILambdaContext>(),
             A.Fake<IServiceProvider>(),
-            pipelineDelegate);
+            pipelineDelegate,
+            CancellationToken.None);
 
          Assert.That(result, Is.SameAs(expectedResult));
       }
@@ -60,11 +62,8 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
       public async Task returns_error_result_when_inner_delegate_throws_exception()
       {
          var exceptionToThrow = new Exception();
-         var expectedResult = A.Fake<ILambdaResult>();
 
-         var resultFactory = LambdaResultFactoryFake.WithUnhandledExceptionResult(exceptionToThrow, expectedResult);
-
-         var middleware = CreateMiddleware(resultFactory: resultFactory);
+         var middleware = CreateMiddleware();
 
          var pipelineDelegate = PipelineDelegateFake.Throws(exceptionToThrow);
 
@@ -72,21 +71,65 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
             new MemoryStream(),
             A.Fake<ILambdaContext>(),
             A.Fake<IServiceProvider>(),
-            pipelineDelegate);
+            pipelineDelegate,
+            CancellationToken.None);
 
-         Assert.That(result, Is.SameAs(expectedResult));
+         Assert.That(result, Is.InstanceOf<ExceptionResult>());
+         var exceptionResult = (ExceptionResult)result;
+         Assert.That(exceptionResult.Exception, Is.SameAs(exceptionToThrow));
+      }
+
+      [Test]
+      public void bubbles_exception_when_inner_delegate_throws_cancellation_exception_for_given_token()
+      {
+         var cancellationTokenSource = new CancellationTokenSource(0);
+         var exceptionToThrow = new OperationCanceledException();
+
+         var middleware = CreateMiddleware();
+
+         var pipelineDelegate = PipelineDelegateFake.Throws(exceptionToThrow);
+
+         var exception = Assert.ThrowsAsync<OperationCanceledException>(async () =>
+         {
+            await middleware.InvokeAsync(
+               new MemoryStream(),
+               A.Fake<ILambdaContext>(),
+               A.Fake<IServiceProvider>(),
+               pipelineDelegate,
+               cancellationTokenSource.Token);
+         });
+
+         Assert.That(exception, Is.SameAs(exceptionToThrow));
+      }
+
+      [Test]
+      public async Task returns_error_result_when_inner_delegate_throws_cancellation_exception_for_another_token()
+      {
+         var cancellationTokenSource = new CancellationTokenSource(10000);
+         var exceptionToThrow = new OperationCanceledException();
+
+         var middleware = CreateMiddleware();
+
+         var pipelineDelegate = PipelineDelegateFake.Throws(exceptionToThrow);
+
+         var result = await middleware.InvokeAsync(
+            new MemoryStream(),
+            A.Fake<ILambdaContext>(),
+            A.Fake<IServiceProvider>(),
+            pipelineDelegate,
+            cancellationTokenSource.Token);
+
+         Assert.That(result, Is.InstanceOf<ExceptionResult>());
+         var exceptionResult = (ExceptionResult)result;
+         Assert.That(exceptionResult.Exception, Is.SameAs(exceptionToThrow));
       }
 
       private static ExceptionHandlingMiddleware CreateMiddleware(
-         ILambdaResultFactory resultFactory = null,
          ILogger<ExceptionHandlingMiddleware> logger = null)
       {
-         resultFactory ??= A.Fake<ILambdaResultFactory>();
          logger ??= NullLogger<ExceptionHandlingMiddleware>.Instance;
 
-         return new ExceptionHandlingMiddleware(
-            resultFactory,
-            logger);
+         return new ExceptionHandlingMiddleware(logger);
       }
    }
 }

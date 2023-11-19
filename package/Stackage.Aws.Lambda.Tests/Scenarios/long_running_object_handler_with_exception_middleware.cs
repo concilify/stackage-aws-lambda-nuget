@@ -43,7 +43,10 @@ namespace Stackage.Aws.Lambda.Tests.Scenarios
       [Test]
       public void handler_received_request_and_returned_response()
       {
-         Assert.That(_responses.Values.Single().ResponseBody, Is.EqualTo("Client Closed Request"));
+         var responseBody = _responses.Values.Single().ResponseBody;
+
+         Assert.That(responseBody, Contains.Substring("\"errorType\": \"TaskCanceledException\""));
+         Assert.That(responseBody, Contains.Substring("\"errorMessage\": \"The request was cancelled due to expiry of remaining time\""));
       }
    }
 }

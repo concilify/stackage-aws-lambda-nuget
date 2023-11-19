@@ -7,6 +7,7 @@ using Amazon.Lambda.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Stackage.Aws.Lambda.Abstractions;
+using Stackage.Aws.Lambda.Results;
 
 namespace Stackage.Aws.Lambda.Middleware
 {
@@ -14,18 +15,15 @@ namespace Stackage.Aws.Lambda.Middleware
    {
       private readonly IConfiguration _configuration;
       private readonly IDeadlineCancellationInitializer _deadlineCancellationInitializer;
-      private readonly ILambdaResultFactory _resultFactory;
       private readonly ILogger<DeadlineCancellationMiddleware> _logger;
 
       public DeadlineCancellationMiddleware(
          IConfiguration configuration,
          IDeadlineCancellationInitializer deadlineCancellationInitializer,
-         ILambdaResultFactory resultFactory,
          ILogger<DeadlineCancellationMiddleware> logger)
       {
          _configuration = configuration;
          _deadlineCancellationInitializer = deadlineCancellationInitializer;
-         _resultFactory = resultFactory;
          _logger = logger;
       }
 
@@ -34,7 +32,7 @@ namespace Stackage.Aws.Lambda.Middleware
          ILambdaContext context,
          IServiceProvider requestServices,
          PipelineDelegate next,
-         CancellationToken cancellationToken = default)
+         CancellationToken cancellationToken)
       {
          var effectiveRemainingTimeMs = GetEffectiveRemainingTimeMs(context);
 
@@ -48,11 +46,13 @@ namespace Stackage.Aws.Lambda.Middleware
          {
             return await next(inputStream, context, requestServices, abortedOrExpired.Token);
          }
-         catch (OperationCanceledException) when (remainingTimeExpired.IsCancellationRequested)
+         catch (OperationCanceledException e) when (remainingTimeExpired.IsCancellationRequested)
          {
-            _logger.LogWarning("The request was cancelled due to expiry of remaining time");
+            const string message = "The request was cancelled due to expiry of remaining time";
 
-            return _resultFactory.RemainingTimeExpired();
+            _logger.LogWarning(e, message);
+
+            return new CancellationResult(message);
          }
       }
 

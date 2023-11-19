@@ -24,13 +24,13 @@ internal class LambdaRuntime : ILambdaRuntime
       return new LambdaInvocation(invocationRequest.InputStream, invocationRequest.LambdaContext);
    }
 
-   public async Task ReplyWithInvocationSuccessAsync(Stream outputStream, ILambdaContext context, CancellationToken cancellationToken)
+   public async Task ReplyWithInvocationSuccessAsync(Stream outputStream, ILambdaContext context)
    {
-      await _runtimeApiClient.SendResponseAsync(context.AwsRequestId, outputStream, cancellationToken);
+      await _runtimeApiClient.SendResponseAsync(context.AwsRequestId, outputStream);
    }
 
-   public async Task ReplyWithInvocationFailureAsync(Exception exception, ILambdaContext context, CancellationToken cancellationToken)
+   public async Task ReplyWithInvocationFailureAsync(Exception exception, ILambdaContext context)
    {
-      await _runtimeApiClient.ReportInvocationErrorAsync(context.AwsRequestId, exception, cancellationToken);
+      await _runtimeApiClient.ReportInvocationErrorAsync(context.AwsRequestId, exception);
    }
 }

@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Stackage.Aws.Lambda.Abstractions;
 using Stackage.Aws.Lambda.Executors;
+using Stackage.Aws.Lambda.Results;
 
 namespace Stackage.Aws.Lambda;
 
@@ -89,6 +90,12 @@ public class LambdaListenerBuilder
          builder.AddJsonConsole();
       });
 
+      services.AddTransient<ILambdaResultExecutor<StreamResult>, StreamResult.Executor>();
+      services.AddTransient<ILambdaResultExecutor<StringResult>, StringResult.Executor>();
+      services.AddTransient<ILambdaResultExecutor<ObjectResult>, ObjectResult.Executor>();
+      services.AddTransient<ILambdaResultExecutor<CancellationResult>, CancellationResult.Executor>();
+      services.AddTransient<ILambdaResultExecutor<ExceptionResult>, ExceptionResult.Executor>();
+
       foreach (var configureService in _configureServices)
       {
          configureService(services, hostServiceProvider);
@@ -97,14 +104,12 @@ public class LambdaListenerBuilder
       var serviceProvider = services.BuildServiceProvider();
 
       var lambdaRuntime = serviceProvider.GetRequiredService<ILambdaRuntime>();
-      var lambdaSerializer = serviceProvider.GetRequiredService<ILambdaSerializer>();
       var logger = serviceProvider.GetRequiredService<ILogger<LambdaListener>>();
 
       return new LambdaListener(
          lambdaRuntime,
          serviceProvider,
          _pipelineBuilder.Build(),
-         lambdaSerializer,
          logger);
    }
 

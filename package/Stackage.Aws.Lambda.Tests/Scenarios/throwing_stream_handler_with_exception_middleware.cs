@@ -33,7 +33,10 @@ namespace Stackage.Aws.Lambda.Tests.Scenarios
       [Test]
       public void handler_received_request_and_returned_response()
       {
-         Assert.That(_responses.Values.Single().ResponseBody, Is.EqualTo("An error occurred - ThrowingStreamLambdaHandler failed"));
+         var responseBody = _responses.Values.Single().ResponseBody;
+
+         Assert.That(responseBody, Contains.Substring("\"errorType\": \"Exception\""));
+         Assert.That(responseBody, Contains.Substring("\"errorMessage\": \"ThrowingStreamLambdaHandler failed\""));
       }
    }
 }

@@ -10,7 +10,7 @@ public interface ILambdaRuntime
 {
    Task<ILambdaInvocation> WaitForInvocationAsync(CancellationToken cancellationToken);
 
-   Task ReplyWithInvocationSuccessAsync(Stream outputStream, ILambdaContext context, CancellationToken cancellationToken);
+   Task ReplyWithInvocationSuccessAsync(Stream outputStream, ILambdaContext context);
 
-   Task ReplyWithInvocationFailureAsync(Exception exception, ILambdaContext context, CancellationToken cancellationToken);
+   Task ReplyWithInvocationFailureAsync(Exception exception, ILambdaContext context);
 }

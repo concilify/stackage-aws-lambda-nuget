@@ -1,13 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Amazon.Lambda.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Stackage.Aws.Lambda.Abstractions;
+using Stackage.Aws.Lambda.Results;
 
 namespace Stackage.Aws.Lambda
 {
@@ -16,20 +15,17 @@ namespace Stackage.Aws.Lambda
       private readonly ILambdaRuntime _lambdaRuntime;
       private readonly IServiceProvider _serviceProvider;
       private readonly PipelineDelegate _pipelineAsync;
-      private readonly ILambdaSerializer _serializer;
       private readonly ILogger<LambdaListener> _logger;
 
       public LambdaListener(
          ILambdaRuntime lambdaRuntime,
          IServiceProvider serviceProvider,
          PipelineDelegate pipelineAsync,
-         ILambdaSerializer serializer,
          ILogger<LambdaListener> logger)
       {
          _lambdaRuntime = lambdaRuntime;
          _serviceProvider = serviceProvider;
          _pipelineAsync = pipelineAsync;
-         _serializer = serializer;
          _logger = logger;
       }
 
@@ -39,7 +35,9 @@ namespace Stackage.Aws.Lambda
          {
             try
             {
-               await WaitAndInvokeNextAsync(cancellationToken);
+               using var invocation = await _lambdaRuntime.WaitForInvocationAsync(cancellationToken);
+
+               await InvokeAndReplyAsync(invocation, cancellationToken);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
@@ -47,54 +45,48 @@ namespace Stackage.Aws.Lambda
          }
       }
 
-      private async Task WaitAndInvokeNextAsync(CancellationToken cancellationToken)
+      internal async Task InvokeAndReplyAsync(ILambdaInvocation invocation, CancellationToken cancellationToken)
       {
-         using var invocation = await _lambdaRuntime.WaitForInvocationAsync(cancellationToken);
-
-         var stopwatch = Stopwatch.StartNew();
-
          using var _ = _logger.BeginScope(new Dictionary<string, object>
          {
             ["AwsRequestId"] = invocation.Context.AwsRequestId
          });
 
-         _logger.LogInformation("Handling request");
+         using var scope = _serviceProvider.CreateScope();
 
-         Stream outputStream;
+         var lambdaResult = await InvokePipelineAsync(invocation, scope.ServiceProvider, cancellationToken);
+
+         await lambdaResult.ExecuteResultAsync(invocation.Context, scope.ServiceProvider);
+      }
+
+      private async Task<ILambdaResult> InvokePipelineAsync(
+         ILambdaInvocation invocation,
+         IServiceProvider requestServices,
+         CancellationToken cancellationToken)
+      {
+         var stopwatch = Stopwatch.StartNew();
+
+         _logger.LogInformation("Handling request");
 
          try
          {
-            using var scope = _serviceProvider.CreateScope();
+            var lambdaResult = await _pipelineAsync(invocation.InputStream, invocation.Context, requestServices, cancellationToken);
 
-            var lambdaResult = await _pipelineAsync(
-               invocation.InputStream, invocation.Context, scope.ServiceProvider, cancellationToken);
+            _logger.LogInformation("Request handler completed {ElapsedMilliseconds}ms", stopwatch.ElapsedMilliseconds);
 
-            outputStream = lambdaResult.SerializeResult(_serializer, invocation.Context);
+            return lambdaResult;
          }
          catch (OperationCanceledException e) when (cancellationToken.IsCancellationRequested)
          {
-            _logger.LogWarning("The request was forcibly ended by the host");
+            _logger.LogWarning(e, "Request handler cancelled {ElapsedMilliseconds}ms", stopwatch.ElapsedMilliseconds);
 
-            await _lambdaRuntime.ReplyWithInvocationFailureAsync(e, invocation.Context, CancellationToken.None);
-            return;
+            return new CancellationResult("The request was cancelled forcibly by the host");
          }
          catch (Exception e)
          {
             _logger.LogError(e, "Request handler failed {ElapsedMilliseconds}ms", stopwatch.ElapsedMilliseconds);
 
-            await _lambdaRuntime.ReplyWithInvocationFailureAsync(e, invocation.Context, cancellationToken);
-            return;
-         }
-
-         try
-         {
-            _logger.LogInformation("Request handler completed {ElapsedMilliseconds}ms", stopwatch.ElapsedMilliseconds);
-
-            await _lambdaRuntime.ReplyWithInvocationSuccessAsync(outputStream, invocation.Context, cancellationToken);
-         }
-         finally
-         {
-            await outputStream.DisposeAsync();
+            return new ExceptionResult(e);
          }
       }
    }

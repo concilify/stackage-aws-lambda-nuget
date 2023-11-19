@@ -5,19 +5,16 @@ using System.Threading.Tasks;
 using Amazon.Lambda.Core;
 using Microsoft.Extensions.Logging;
 using Stackage.Aws.Lambda.Abstractions;
+using Stackage.Aws.Lambda.Results;
 
 namespace Stackage.Aws.Lambda.Middleware
 {
    public class ExceptionHandlingMiddleware : ILambdaMiddleware
    {
-      private readonly ILambdaResultFactory _resultFactory;
       private readonly ILogger<ExceptionHandlingMiddleware> _logger;
 
-      public ExceptionHandlingMiddleware(
-         ILambdaResultFactory resultFactory,
-         ILogger<ExceptionHandlingMiddleware> logger)
+      public ExceptionHandlingMiddleware(ILogger<ExceptionHandlingMiddleware> logger)
       {
-         _resultFactory = resultFactory;
          _logger = logger;
       }
 
@@ -26,7 +23,7 @@ namespace Stackage.Aws.Lambda.Middleware
          ILambdaContext context,
          IServiceProvider requestServices,
          PipelineDelegate next,
-         CancellationToken cancellationToken = default)
+         CancellationToken cancellationToken)
       {
          try
          {
@@ -34,15 +31,13 @@ namespace Stackage.Aws.Lambda.Middleware
          }
          catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
          {
-            _logger.LogWarning("The request was forcibly ended by the host");
-
-            return _resultFactory.HostEndedRequest();
+            throw;
          }
          catch (Exception e)
          {
             _logger.LogError(e, "An unhandled exception occured");
 
-            return _resultFactory.UnhandledException(e);
+            return new ExceptionResult(e);
          }
       }
    }
