@@ -23,7 +23,7 @@ public class CancellationResultExecutorTests
       await result.ExecuteResultAsync(context, serviceProvider);
 
       A.CallTo(() => lambdaRuntime.ReplyWithInvocationFailureAsync(
-            A<Exception>.That.Matches(e => e is TimeoutException && e.Message == "ArbitraryMessage"),
+            A<Exception>.That.Matches(e => e is TaskCanceledException && e.Message == "ArbitraryMessage"),
             context))
          .MustHaveHappenedOnceExactly();
    }

@@ -32,7 +32,7 @@ public class CancellationResult : ILambdaResult
 
       public async Task ExecuteAsync(ILambdaContext context, CancellationResult result)
       {
-         await _lambdaRuntime.ReplyWithInvocationFailureAsync(new TimeoutException(result.Message), context);
+         await _lambdaRuntime.ReplyWithInvocationFailureAsync(new TaskCanceledException(result.Message), context);
       }
    }
 }
