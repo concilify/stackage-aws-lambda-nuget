@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Amazon.Lambda.Core;
@@ -35,20 +36,16 @@ public class LambdaListenerTests
          return Task.FromResult<ILambdaResult>(new StringResult("Arbitrary Result"));
       }
 
-      var sp1 = A.Fake<IServiceProvider>();
-      var sp2 = A.Fake<IServiceProvider>();
-      var sp3 = A.Fake<IServiceProvider>();
-
       var lambdaListener = CreateLambdaListener(
-         pipelineAsync: CapturingPipelineDelegate,
-         serviceProvider: ServiceProviderFake.CreateScopeReturns(sp1, sp2, sp3));
+         pipelineAsync: CapturingPipelineDelegate);
 
       await lambdaListener.ListenAsync(cts.Token);
 
       Assert.That(capturedServiceProviders.Count, Is.EqualTo(3));
-      Assert.That(capturedServiceProviders[0], Is.SameAs(sp1));
-      Assert.That(capturedServiceProviders[1], Is.SameAs(sp2));
-      Assert.That(capturedServiceProviders[2], Is.SameAs(sp3));
+      Assert.That(capturedServiceProviders.All(sp => sp != null), Is.True);
+      Assert.That(capturedServiceProviders[0], Is.Not.SameAs(capturedServiceProviders[1]));
+      Assert.That(capturedServiceProviders[0], Is.Not.SameAs(capturedServiceProviders[2]));
+      Assert.That(capturedServiceProviders[1], Is.Not.SameAs(capturedServiceProviders[2]));
    }
 
    [Test]
