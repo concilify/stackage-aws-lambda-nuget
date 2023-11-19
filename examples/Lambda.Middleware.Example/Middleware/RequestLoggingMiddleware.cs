@@ -23,7 +23,7 @@ namespace Lambda.Middleware.Example.Middleware
          ILambdaContext context,
          IServiceProvider requestServices,
          PipelineDelegate next,
-         CancellationToken cancellationToken = default)
+         CancellationToken cancellationToken)
       {
          var timer = Stopwatch.StartNew();
 
