@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Net.Http;
 using System.Runtime.InteropServices;
@@ -22,7 +23,7 @@ public class LambdaListenerBuilder
    private readonly List<Action<IServiceCollection, IServiceProvider>> _configureServices = new();
    private readonly LambdaPipelineBuilder _pipelineBuilder = new();
 
-   public LambdaListenerBuilder UseHandler<THandler>()
+   public LambdaListenerBuilder UseHandler<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]THandler>()
       where THandler : class, ILambdaHandler<Stream>
    {
       _configureServices.Add((services, _) =>
@@ -34,7 +35,7 @@ public class LambdaListenerBuilder
       return this;
    }
 
-   public LambdaListenerBuilder UseHandler<THandler, TInput>()
+   public LambdaListenerBuilder UseHandler<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]THandler, TInput>()
       where THandler : class, ILambdaHandler<TInput>
    {
       _configureServices.Add((services, _) =>
@@ -46,7 +47,7 @@ public class LambdaListenerBuilder
       return this;
    }
 
-   public LambdaListenerBuilder UseStartup<TStartup>()
+   public LambdaListenerBuilder UseStartup<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]TStartup>()
       where TStartup : ILambdaStartup
    {
       _configureServices.Add((services, hostServiceProvider) =>
@@ -60,7 +61,8 @@ public class LambdaListenerBuilder
       return this;
    }
 
-   public LambdaListenerBuilder UseSerializer<TSerializer>() where TSerializer : class, ILambdaSerializer
+   public LambdaListenerBuilder UseSerializer<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]TSerializer>()
+      where TSerializer : class, ILambdaSerializer
    {
       _configureServices.Add((services, _) =>
       {
