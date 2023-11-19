@@ -1,7 +1,7 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Amazon.Lambda.Core;
 using Microsoft.Extensions.Logging;
@@ -22,23 +22,19 @@ namespace Lambda.Middleware.Example.Middleware
          Stream inputStream,
          ILambdaContext context,
          IServiceProvider requestServices,
-         PipelineDelegate next)
+         PipelineDelegate next,
+         CancellationToken cancellationToken = default)
       {
-         using (_logger.BeginScope(new Dictionary<string, object> {{"AwsRequestId", context.AwsRequestId}}))
-         {
-            _logger.LogInformation("Request started");
+         var timer = Stopwatch.StartNew();
 
-            var timer = Stopwatch.StartNew();
+         var lambdaResult = await next(inputStream, context, requestServices, cancellationToken);
 
-            try
-            {
-               return await next(inputStream, context, requestServices);
-            }
-            finally
-            {
-               _logger.LogInformation("Request completed in {durationMs}ms", timer.ElapsedMilliseconds);
-            }
-         }
+         _logger.LogInformation(
+            "Request returned {lambdaResultType} in {durationMs}ms",
+            lambdaResult.GetType().Name,
+            timer.ElapsedMilliseconds);
+
+         return lambdaResult;
       }
    }
 }
