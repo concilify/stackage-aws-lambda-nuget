@@ -14,5 +14,10 @@ namespace Lambda.Middleware.Example.Integrations
       {
          return new HttpErrorResult(499, "Client Closed Request");
       }
+
+      public ILambdaResult HostEndedRequest()
+      {
+         return new HttpErrorResult(444, "No Response");
+      }
    }
 }
