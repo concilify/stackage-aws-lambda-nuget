@@ -32,6 +32,12 @@ namespace Stackage.Aws.Lambda.Middleware
          {
             return await next(inputStream, context, requestServices, cancellationToken);
          }
+         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+         {
+            _logger.LogWarning("The request was forcibly ended by the host");
+
+            return _resultFactory.HostEndedRequest();
+         }
          catch (Exception e)
          {
             _logger.LogError(e, "An unhandled exception occured");

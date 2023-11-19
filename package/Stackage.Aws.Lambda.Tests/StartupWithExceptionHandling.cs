@@ -30,6 +30,11 @@ namespace Stackage.Aws.Lambda.Tests
          {
             throw new NotSupportedException();
          }
+
+         public ILambdaResult HostEndedRequest()
+         {
+            throw new NotSupportedException();
+         }
       }
    }
 }
