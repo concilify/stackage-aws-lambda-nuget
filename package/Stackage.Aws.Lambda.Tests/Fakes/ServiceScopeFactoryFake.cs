@@ -7,7 +7,7 @@ public static class ServiceScopeFactoryFake
 {
    public static IServiceScopeFactory Valid() => CreateScopeReturns(ServiceScopeFake.Valid());
 
-   private static IServiceScopeFactory CreateScopeReturns(IServiceScope serviceScope)
+   public static IServiceScopeFactory CreateScopeReturns(IServiceScope serviceScope)
    {
       var serviceScopeFactory = A.Fake<IServiceScopeFactory>();
 

@@ -8,7 +8,7 @@ public static class ServiceScopeFake
 {
    public static IServiceScope Valid() => Contains(A.Fake<IServiceProvider>());
 
-   private static IServiceScope Contains(IServiceProvider serviceProvider)
+   public static IServiceScope Contains(IServiceProvider serviceProvider)
    {
       var serviceScope = A.Fake<IServiceScope>();
 
