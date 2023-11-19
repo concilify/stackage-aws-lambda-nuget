@@ -7,6 +7,7 @@ using Amazon.Lambda.Core;
 using FakeItEasy;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using NUnit.Framework;
 using Stackage.Aws.Lambda.Abstractions;
 using Stackage.Aws.Lambda.Middleware;
@@ -153,7 +154,7 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
          configuration ??= new ConfigurationBuilder().Build();
          cancellationInitializer ??= A.Fake<IDeadlineCancellationInitializer>();
          resultFactory ??= A.Fake<ILambdaResultFactory>();
-         logger ??= A.Fake<ILogger<DeadlineCancellationMiddleware>>();
+         logger ??= NullLogger<DeadlineCancellationMiddleware>.Instance;
 
          return new DeadlineCancellationMiddleware(
             configuration,
