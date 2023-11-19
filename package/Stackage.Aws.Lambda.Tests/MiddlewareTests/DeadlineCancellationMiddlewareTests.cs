@@ -31,7 +31,8 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
             new MemoryStream(),
             LambdaContextFake.Valid(),
             A.Fake<IServiceProvider>(),
-            pipelineDelegate);
+            pipelineDelegate,
+            CancellationToken.None);
 
          Assert.That(result, Is.SameAs(expectedResult));
       }
@@ -46,19 +47,16 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
       [TestCase(50, 49)]
       [TestCase(50, 1)]
       [TestCase(50, -1)]
-      public static async Task invoke_is_cancelled_almost_immediately_and_returns_remaining_time_result(
+      public static async Task invoke_is_cancelled_almost_immediately_and_returns_cancellation_result(
          int shutdownTimeoutMs,
          int remainingMs)
       {
          var configuration = ConfigurationFake.WithShutdownTimeoutMs(shutdownTimeoutMs);
-         var expectedResult = A.Fake<ILambdaResult>();
          var deadlineCancellation = new DeadlineCancellation();
-         var resultFactory = LambdaResultFactoryFake.WithRemainingTimeExpiredResult(expectedResult);
 
          var middleware = CreateMiddleware(
             configuration: configuration,
-            cancellationInitializer: deadlineCancellation,
-            resultFactory: resultFactory);
+            cancellationInitializer: deadlineCancellation);
 
          async Task<ILambdaResult> LongRunningInnerDelegate(
             Stream inputStream,
@@ -77,9 +75,12 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
             new MemoryStream(),
             LambdaContextFake.WithRemainingTime(TimeSpan.FromMilliseconds(remainingMs)),
             A.Fake<IServiceProvider>(),
-            LongRunningInnerDelegate);
+            LongRunningInnerDelegate,
+            CancellationToken.None);
 
-         Assert.That(result, Is.SameAs(expectedResult));
+         Assert.That(result, Is.InstanceOf<CancellationResult>());
+         var cancellationResult = (CancellationResult)result;
+         Assert.That(cancellationResult.Message, Is.EqualTo("The request was cancelled due to expiry of remaining time"));
          Assert.That(stopwatch.ElapsedMilliseconds, Is.LessThan(400));
       }
 
@@ -148,18 +149,15 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
       private static DeadlineCancellationMiddleware CreateMiddleware(
          IConfiguration configuration = null,
          IDeadlineCancellationInitializer cancellationInitializer = null,
-         ILambdaResultFactory resultFactory = null,
          ILogger<DeadlineCancellationMiddleware> logger = null)
       {
          configuration ??= new ConfigurationBuilder().Build();
          cancellationInitializer ??= A.Fake<IDeadlineCancellationInitializer>();
-         resultFactory ??= A.Fake<ILambdaResultFactory>();
          logger ??= NullLogger<DeadlineCancellationMiddleware>.Instance;
 
          return new DeadlineCancellationMiddleware(
             configuration,
             cancellationInitializer,
-            resultFactory,
             logger);
       }
    }

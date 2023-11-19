@@ -10,7 +10,7 @@ namespace Stackage.Aws.Lambda.Tests.Handlers
    {
       public Task<ILambdaResult> HandleAsync(StringPoco input, ILambdaContext context)
       {
-         return Task.FromResult<ILambdaResult>(new ContentResult<StringPoco>(new StringPoco {Value = $"[{input.Value}]"}));
+         return Task.FromResult<ILambdaResult>(new ObjectResult(new StringPoco {Value = $"[{input.Value}]"}));
       }
    }
 }

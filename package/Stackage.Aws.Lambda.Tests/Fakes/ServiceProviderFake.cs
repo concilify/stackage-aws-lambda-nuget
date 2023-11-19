@@ -10,9 +10,25 @@ public static class ServiceProviderFake
    public static IServiceProvider Returns<T>(T service)
       where T : class
    {
+      return Configure(services => services.AddSingleton(service));
+   }
+
+   public static IServiceProvider Returns<T1, T2>(T1 service1, T2 service2)
+      where T1 : class
+      where T2 : class
+   {
+      return Configure(services =>
+      {
+         services.AddSingleton(service1);
+         services.AddSingleton(service2);
+      });
+   }
+
+   private static IServiceProvider Configure(Action<ServiceCollection> callback)
+   {
       var services = new ServiceCollection();
 
-      services.AddSingleton(service);
+      callback(services);
 
       return services.BuildServiceProvider();
    }
