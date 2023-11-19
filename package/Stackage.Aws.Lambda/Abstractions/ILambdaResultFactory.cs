@@ -7,5 +7,7 @@ namespace Stackage.Aws.Lambda.Abstractions
       ILambdaResult UnhandledException(Exception exception);
 
       ILambdaResult RemainingTimeExpired();
+
+      ILambdaResult HostEndedRequest();
    }
 }

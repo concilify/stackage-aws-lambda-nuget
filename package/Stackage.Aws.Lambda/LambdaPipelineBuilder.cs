@@ -21,7 +21,7 @@ namespace Stackage.Aws.Lambda
 
       public PipelineDelegate Build()
       {
-         PipelineDelegate pipeline = (inputStream, context, requestServices) =>
+         PipelineDelegate pipeline = (inputStream, context, requestServices, cancellationToken) =>
          {
             var handlerExecutor = requestServices.GetService<ILambdaHandlerExecutor>();
 
@@ -30,7 +30,7 @@ namespace Stackage.Aws.Lambda
                throw new InvalidOperationException("No handler configured. Please specify a handler via ILambdaHostBuilder.UseHandler.");
             }
 
-            return handlerExecutor.ExecuteAsync(inputStream, context);
+            return handlerExecutor.ExecuteAsync(inputStream, context, cancellationToken);
          };
 
          foreach (var component in _components.Reverse())

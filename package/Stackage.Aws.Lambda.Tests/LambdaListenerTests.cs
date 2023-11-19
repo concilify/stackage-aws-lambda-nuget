@@ -32,6 +32,25 @@ public class LambdaListenerTests
    }
 
    [Test]
+   public async Task cancellation_token_is_passed_to_pipeline()
+   {
+      var cancellationTokenSource = new CancellationTokenSource();
+
+      var pipelineAsync = PipelineDelegateFake.Callback(
+         (_, _, _, cancellationToken) =>
+         {
+            Assert.That(cancellationToken.IsCancellationRequested, Is.False);
+            cancellationTokenSource.Cancel();
+            Assert.That(cancellationToken.IsCancellationRequested, Is.True);
+         });
+
+      var lambdaListener = CreateLambdaListener(
+         pipelineAsync: pipelineAsync);
+
+      await lambdaListener.ListenAsync(cancellationTokenSource.Token);
+   }
+
+   [Test]
    public async Task cancellation_token_is_passed_to_reply_with_success()
    {
       var cancellationTokenSource = new CancellationTokenSource();

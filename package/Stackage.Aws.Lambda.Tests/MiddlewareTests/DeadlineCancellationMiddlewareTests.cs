@@ -1,7 +1,7 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Amazon.Lambda.Core;
 using FakeItEasy;
@@ -24,19 +24,13 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
 
          var middleware = CreateMiddleware();
 
-         Task<ILambdaResult> InnerDelegate(
-            Stream inputStream,
-            ILambdaContext context,
-            IServiceProvider requestServices)
-         {
-            return Task.FromResult(expectedResult);
-         }
+         var pipelineDelegate = PipelineDelegateFake.Returns(expectedResult);
 
          var result = await middleware.InvokeAsync(
             new MemoryStream(),
             LambdaContextFake.Valid(),
             A.Fake<IServiceProvider>(),
-            InnerDelegate);
+            pipelineDelegate);
 
          Assert.That(result, Is.SameAs(expectedResult));
       }
@@ -52,15 +46,10 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
       [TestCase(50, 1)]
       [TestCase(50, -1)]
       public static async Task invoke_is_cancelled_almost_immediately_and_returns_remaining_time_result(
-         int shutdownMs,
+         int shutdownTimeoutMs,
          int remainingMs)
       {
-         var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string>
-            {
-               ["ShutdownTimeoutMs"] = shutdownMs.ToString()
-            })
-            .Build();
+         var configuration = ConfigurationFake.WithShutdownTimeoutMs(shutdownTimeoutMs);
          var expectedResult = A.Fake<ILambdaResult>();
          var deadlineCancellation = new DeadlineCancellation();
          var resultFactory = LambdaResultFactoryFake.WithRemainingTimeExpiredResult(expectedResult);
@@ -73,7 +62,8 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
          async Task<ILambdaResult> LongRunningInnerDelegate(
             Stream inputStream,
             ILambdaContext context,
-            IServiceProvider requestServices)
+            IServiceProvider requestServices,
+            CancellationToken cancellationToken)
          {
             await Task.Delay(TimeSpan.FromHours(1), deadlineCancellation.Token);
 
@@ -92,7 +82,69 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
          Assert.That(stopwatch.ElapsedMilliseconds, Is.LessThan(400));
       }
 
-      private static ILambdaMiddleware CreateMiddleware(
+      [Test]
+      public async Task cancellation_token_passed_to_inner_delegate_can_be_cancelled_by_incoming_cancellation_token()
+      {
+         var cancellationTokenSource = new CancellationTokenSource();
+
+         var pipelineDelegate = PipelineDelegateFake.Callback(
+            (_, _, _, cancellationToken) =>
+            {
+               Assert.That(cancellationToken.IsCancellationRequested, Is.False);
+               cancellationTokenSource.Cancel();
+               Assert.That(cancellationToken.IsCancellationRequested, Is.True);
+            });
+
+         var deadlineCancellation = new DeadlineCancellation();
+
+         var middleware = CreateMiddleware(
+            cancellationInitializer: deadlineCancellation);
+
+         await middleware.InvokeAsync(
+            new MemoryStream(),
+            LambdaContextFake.WithRemainingTime(TimeSpan.FromSeconds(10)),
+            A.Fake<IServiceProvider>(),
+            pipelineDelegate,
+            cancellationTokenSource.Token);
+
+         Assert.That(deadlineCancellation.Token.IsCancellationRequested, Is.True);
+         Assert.That(cancellationTokenSource.IsCancellationRequested, Is.True);
+      }
+
+      [Test]
+      public async Task cancellation_token_passed_to_inner_delegate_can_be_cancelled_by_lack_of_time_remaining()
+      {
+         var cancellationTokenSource = new CancellationTokenSource();
+
+         var pipelineDelegate = PipelineDelegateFake.AsyncCallback(
+            async (_, _, _, cancellationToken) =>
+            {
+               Assert.That(cancellationToken.IsCancellationRequested, Is.False);
+
+               await Task.Delay(10000, cancellationToken);
+
+               Assert.That(cancellationToken.IsCancellationRequested, Is.True);
+            });
+
+         var configuration = ConfigurationFake.WithShutdownTimeoutMs(0);
+         var deadlineCancellation = new DeadlineCancellation();
+
+         var middleware = CreateMiddleware(
+            configuration: configuration,
+            cancellationInitializer: deadlineCancellation);
+
+         await middleware.InvokeAsync(
+            new MemoryStream(),
+            LambdaContextFake.WithRemainingTime(TimeSpan.FromMilliseconds(200)),
+            A.Fake<IServiceProvider>(),
+            pipelineDelegate,
+            cancellationTokenSource.Token);
+
+         Assert.That(deadlineCancellation.Token.IsCancellationRequested, Is.True);
+         Assert.That(cancellationTokenSource.IsCancellationRequested, Is.False);
+      }
+
+      private static DeadlineCancellationMiddleware CreateMiddleware(
          IConfiguration configuration = null,
          IDeadlineCancellationInitializer cancellationInitializer = null,
          ILambdaResultFactory resultFactory = null,

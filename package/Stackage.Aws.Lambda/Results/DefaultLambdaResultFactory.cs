@@ -14,5 +14,10 @@ namespace Stackage.Aws.Lambda.Results
       {
          return new StringResult("Client Closed Request");
       }
+
+      public ILambdaResult HostEndedRequest()
+      {
+         return new StringResult("No Response");
+      }
    }
 }

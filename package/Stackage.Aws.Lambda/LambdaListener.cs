@@ -66,9 +66,17 @@ namespace Stackage.Aws.Lambda
          {
             using var scope = _serviceProvider.CreateScope();
 
-            var lambdaResult = await _pipelineAsync(invocation.InputStream, invocation.Context, scope.ServiceProvider);
+            var lambdaResult = await _pipelineAsync(
+               invocation.InputStream, invocation.Context, scope.ServiceProvider, cancellationToken);
 
             outputStream = lambdaResult.SerializeResult(_serializer, invocation.Context);
+         }
+         catch (OperationCanceledException e) when (cancellationToken.IsCancellationRequested)
+         {
+            _logger.LogWarning("The request was forcibly ended by the host");
+
+            await _lambdaRuntime.ReplyWithInvocationFailureAsync(e, invocation.Context, CancellationToken.None);
+            return;
          }
          catch (Exception e)
          {

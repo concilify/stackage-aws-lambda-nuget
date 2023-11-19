@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Amazon.Lambda.Core;
 using Microsoft.Extensions.Logging;
@@ -24,11 +25,18 @@ namespace Stackage.Aws.Lambda.Middleware
          Stream inputStream,
          ILambdaContext context,
          IServiceProvider requestServices,
-         PipelineDelegate next)
+         PipelineDelegate next,
+         CancellationToken cancellationToken = default)
       {
          try
          {
-            return await next(inputStream, context, requestServices);
+            return await next(inputStream, context, requestServices, cancellationToken);
+         }
+         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+         {
+            _logger.LogWarning("The request was forcibly ended by the host");
+
+            return _resultFactory.HostEndedRequest();
          }
          catch (Exception e)
          {

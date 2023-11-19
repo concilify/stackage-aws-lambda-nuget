@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Amazon.Lambda.Core;
 using FakeItEasy;
@@ -20,21 +21,38 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
 
          var middleware = CreateMiddleware();
 
-         Task<ILambdaResult> InnerDelegate(
-            Stream inputStream,
-            ILambdaContext context,
-            IServiceProvider requestServices)
-         {
-            return Task.FromResult(expectedResult);
-         }
+         var pipelineDelegate = PipelineDelegateFake.Returns(expectedResult);
 
          var result = await middleware.InvokeAsync(
             new MemoryStream(),
             A.Fake<ILambdaContext>(),
             A.Fake<IServiceProvider>(),
-            InnerDelegate);
+            pipelineDelegate);
 
          Assert.That(result, Is.SameAs(expectedResult));
+      }
+
+      [Test]
+      public async Task cancellation_token_is_passed_to_inner_delegate()
+      {
+         var cancellationTokenSource = new CancellationTokenSource();
+
+         var pipelineDelegate = PipelineDelegateFake.Callback(
+            (_, _, _, cancellationToken) =>
+            {
+               Assert.That(cancellationToken.IsCancellationRequested, Is.False);
+               cancellationTokenSource.Cancel();
+               Assert.That(cancellationToken.IsCancellationRequested, Is.True);
+            });
+
+         var middleware = CreateMiddleware();
+
+         await middleware.InvokeAsync(
+            new MemoryStream(),
+            A.Fake<ILambdaContext>(),
+            A.Fake<IServiceProvider>(),
+            pipelineDelegate,
+            cancellationTokenSource.Token);
       }
 
       [Test]
@@ -47,24 +65,18 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
 
          var middleware = CreateMiddleware(resultFactory: resultFactory);
 
-         Task<ILambdaResult> InnerDelegate(
-            Stream inputStream,
-            ILambdaContext context,
-            IServiceProvider requestServices)
-         {
-            throw exceptionToThrow;
-         }
+         var pipelineDelegate = PipelineDelegateFake.Throws(exceptionToThrow);
 
          var result = await middleware.InvokeAsync(
             new MemoryStream(),
             A.Fake<ILambdaContext>(),
             A.Fake<IServiceProvider>(),
-            InnerDelegate);
+            pipelineDelegate);
 
          Assert.That(result, Is.SameAs(expectedResult));
       }
 
-      private static ILambdaMiddleware CreateMiddleware(
+      private static ExceptionHandlingMiddleware CreateMiddleware(
          ILambdaResultFactory resultFactory = null,
          ILogger<ExceptionHandlingMiddleware> logger = null)
       {

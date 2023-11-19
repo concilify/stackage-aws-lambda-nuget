@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Amazon.Lambda.Core;
 using Stackage.Aws.Lambda.Abstractions;
@@ -18,7 +19,7 @@ internal class LambdaHandlerExecutor<TInput> : ILambdaHandlerExecutor
       _handler = handler;
    }
 
-   public async Task<ILambdaResult> ExecuteAsync(Stream inputStream, ILambdaContext context)
+   public async Task<ILambdaResult> ExecuteAsync(Stream inputStream, ILambdaContext context, CancellationToken cancellationToken = default)
    {
       var inputObject = _serializer.Deserialize<TInput>(inputStream);
 

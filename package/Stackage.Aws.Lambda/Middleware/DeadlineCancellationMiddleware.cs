@@ -33,21 +33,24 @@ namespace Stackage.Aws.Lambda.Middleware
          Stream inputStream,
          ILambdaContext context,
          IServiceProvider requestServices,
-         PipelineDelegate next)
+         PipelineDelegate next,
+         CancellationToken cancellationToken = default)
       {
          var effectiveRemainingTimeMs = GetEffectiveRemainingTimeMs(context);
 
-         using var requestAborted = new CancellationTokenSource(effectiveRemainingTimeMs);
+         using var remainingTimeExpired = new CancellationTokenSource(effectiveRemainingTimeMs);
+         using var abortedOrExpired = CancellationTokenSource.CreateLinkedTokenSource(
+            cancellationToken, remainingTimeExpired.Token);
 
-         _deadlineCancellationInitializer.Initialize(requestAborted.Token);
+         _deadlineCancellationInitializer.Initialize(abortedOrExpired.Token);
 
          try
          {
-            return await next(inputStream, context, requestServices);
+            return await next(inputStream, context, requestServices, abortedOrExpired.Token);
          }
-         catch (OperationCanceledException) when (requestAborted.IsCancellationRequested)
+         catch (OperationCanceledException) when (remainingTimeExpired.IsCancellationRequested)
          {
-            _logger.LogWarning("The request was aborted gracefully");
+            _logger.LogWarning("The request was cancelled due to expiry of remaining time");
 
             return _resultFactory.RemainingTimeExpired();
          }
