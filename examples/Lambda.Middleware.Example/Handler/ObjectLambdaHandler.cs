@@ -28,7 +28,7 @@ namespace Lambda.Middleware.Example.Handler
             await Task.Delay(5000, _deadlineCancellation.Token);
          }
 
-         return new HttpContentResult<OutputPoco>(new OutputPoco {Action = input.Action});
+         return new HttpObjectResult(new OutputPoco {Action = input.Action});
       }
    }
 }
