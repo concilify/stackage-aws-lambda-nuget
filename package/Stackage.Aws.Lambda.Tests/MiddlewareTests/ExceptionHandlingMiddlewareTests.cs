@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Amazon.Lambda.Core;
 using FakeItEasy;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using NUnit.Framework;
 using Stackage.Aws.Lambda.Abstractions;
 using Stackage.Aws.Lambda.Middleware;
@@ -81,7 +82,7 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
          ILogger<ExceptionHandlingMiddleware> logger = null)
       {
          resultFactory ??= A.Fake<ILambdaResultFactory>();
-         logger ??= A.Fake<ILogger<ExceptionHandlingMiddleware>>();
+         logger ??= NullLogger<ExceptionHandlingMiddleware>.Instance;
 
          return new ExceptionHandlingMiddleware(
             resultFactory,
