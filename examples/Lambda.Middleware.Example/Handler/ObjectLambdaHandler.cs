@@ -23,12 +23,24 @@ namespace Lambda.Middleware.Example.Handler
             throw new Exception("Throwing exception from ObjectLambdaHandler");
          }
 
-         if (input.Action == "delay")
+         if (input.Action != null && input.Action.StartsWith("delay"))
          {
-            await Task.Delay(5000, _deadlineCancellation.Token);
+            await Task.Delay(ParseDelay(input.Action), _deadlineCancellation.Token);
          }
 
          return new HttpObjectResult(new OutputPoco {Action = input.Action});
+      }
+
+      private static int ParseDelay(string action)
+      {
+         var parts = action.Split(":");
+
+         if (parts.Length <= 1 || !int.TryParse(parts[1], out var delay))
+         {
+            return 5000;
+         }
+
+         return delay;
       }
    }
 }
