@@ -21,3 +21,5 @@ RUN cd /app/Lambda.Middleware.Example/bin/Release/net8.0/linux-x64/publish && zi
 # aws lambda update-function-code --function-name lambda-basic-example --zip-file fileb://Lambda.Basic.Example.zip --publish --dry-run
 
 # workflow to deploy on push to deploy branch
+
+#dotnet publish ./Lambda.Basic.Example/Lambda.Basic.Example.csproj --output publish/basic

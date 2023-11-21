@@ -1,0 +1,35 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+    - deploy
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      DOTNET_NOLOGO: true
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    # - name: Setup .NET 6.0
+    #   uses: actions/setup-dotnet@v3
+    #   with:
+    #     dotnet-version: '6.0.x'
+
+    - name: Setup .NET 8.0
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Publish
+      run: dotnet publish --configuration Release --self-contained --runtime linux-x64 ./examples/Lambda.Basic.Example/Lambda.Basic.Example.csproj --output publish/basic
+
+    - name: Package
+      working-directory: ./publish/basic
+      run: zip -r ../Lambda.Basic.Example.zip .
