@@ -27,3 +27,6 @@ RUN cd /app/Lambda.Middleware.Example/bin/Release/net8.0/linux-x64/publish && zi
 #dotnet publish ./Lambda.Basic.Example/Lambda.Basic.Example.csproj --output publish/basic
 
 #aws lambda update-function-configuration --function-name lambda-basic-example --environment "Variables={COMMIT_SHA=abc,DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=true}"
+
+different jobs to deploy both lambdas \
+    use COMMIT_SHA in middleware for logging scope
