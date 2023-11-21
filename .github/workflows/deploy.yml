@@ -1,0 +1,103 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+    - deploy
+
+jobs:
+  deploy-basic-example:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5      # Align with role-duration-seconds
+
+    env:
+      DOTNET_NOLOGO: true
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup .NET 6.0
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '6.0.x'
+
+    # Amazon.Lambda.Tools doesn't yet support .NET 8, so reverting to dotnet publish and zip rather than dotnet lambda package
+    - name: Publish
+      run: dotnet publish --configuration Release --self-contained --runtime linux-x64 ./examples/Lambda.Basic.Example/Lambda.Basic.Example.csproj --output publish/basic
+
+    - name: Package
+      working-directory: ./publish/basic
+      run: zip -r ../../Lambda.Basic.Example.zip .
+
+    - name: Set COMMIT_SHA
+      run: echo "COMMIT_SHA=`echo ${{ github.sha }} | cut -c1-8`" >> $GITHUB_ENV
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: eu-west-2
+        role-duration-seconds: 300
+
+    - name: Update Function Configuration
+      run: |
+        aws lambda update-function-configuration \
+          --function-name lambda-basic-example \
+          --environment "Variables={COMMIT_SHA=${COMMIT_SHA}}"
+
+    - name: Update Function Code
+      run: |
+        aws lambda update-function-code \
+          --function-name lambda-basic-example \
+          --zip-file fileb://Lambda.Basic.Example.zip \
+          --publish
+
+  deploy-middleware-example:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5      # Align with role-duration-seconds
+
+    env:
+      DOTNET_NOLOGO: true
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup .NET 6.0
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '6.0.x'
+
+    # Amazon.Lambda.Tools doesn't yet support .NET 8, so reverting to dotnet publish and zip rather than dotnet lambda package
+    - name: Publish
+      run: dotnet publish --configuration Release --self-contained --runtime linux-x64 ./examples/Lambda.Middleware.Example/Lambda.Middleware.Example.csproj --output publish/middleware
+
+    - name: Package
+      working-directory: ./publish/middleware
+      run: zip -r ../../Lambda.Middleware.Example.zip .
+
+    - name: Set COMMIT_SHA
+      run: echo "COMMIT_SHA=`echo ${{ github.sha }} | cut -c1-8`" >> $GITHUB_ENV
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: eu-west-2
+        role-duration-seconds: 300
+
+    - name: Update Function Configuration
+      run: |
+        aws lambda update-function-configuration \
+          --function-name lambda-middleware-example \
+          --environment "Variables={COMMIT_SHA=${COMMIT_SHA}}"
+
+    - name: Update Function Code
+      run: |
+        aws lambda update-function-code \
+          --function-name lambda-middleware-example \
+          --zip-file fileb://Lambda.Middleware.Example.zip \
+          --publish
