@@ -4,7 +4,6 @@ using Amazon.Lambda.Core;
 using Lambda.Middleware.Example.Integrations;
 using Lambda.Middleware.Example.Model;
 using Stackage.Aws.Lambda.Abstractions;
-using Stackage.Aws.Lambda.Results;
 
 namespace Lambda.Middleware.Example.Handler
 {

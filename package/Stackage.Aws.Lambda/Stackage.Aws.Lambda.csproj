@@ -13,6 +13,7 @@
 
   <PropertyGroup Condition="'$(TargetFramework)' == 'net8.0'">
     <IsAotCompatible>true</IsAotCompatible>
+    <MSBuildTreatWarningsAsErrors>true</MSBuildTreatWarningsAsErrors>
   </PropertyGroup>
 
   <PropertyGroup>
