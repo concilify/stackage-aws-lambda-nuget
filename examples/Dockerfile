@@ -25,3 +25,5 @@ RUN cd /app/Lambda.Middleware.Example/bin/Release/net8.0/linux-x64/publish && zi
 # workflow to deploy on push to deploy branch
 
 #dotnet publish ./Lambda.Basic.Example/Lambda.Basic.Example.csproj --output publish/basic
+
+#aws lambda update-function-configuration --function-name lambda-basic-example --environment "Variables={COMMIT_SHA=abc,DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=true}"
