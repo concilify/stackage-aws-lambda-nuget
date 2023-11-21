@@ -8,6 +8,10 @@ using Amazon.Lambda.Core;
 using Amazon.Lambda.RuntimeSupport;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Serilog;
+using Serilog.Core;
+using Serilog.Events;
+using Serilog.Formatting.Json;
 using Stackage.Aws.Lambda.Abstractions;
 using Stackage.Aws.Lambda.Executors;
 using Stackage.Aws.Lambda.Results;
@@ -87,9 +91,14 @@ public class LambdaListenerBuilder
 
       services.AddLogging(builder =>
       {
-         builder.AddConfiguration(hostServiceProvider.Configuration.GetSection("Logging"));
+         var logger = new LoggerConfiguration()
+            .ReadFrom.Configuration(hostServiceProvider.Configuration)
+            .WriteTo.Console(new JsonFormatter())
+            .Enrich.With(new CommitSha(hostServiceProvider.Configuration["COMMIT_SHA"]))
+            .CreateLogger();
+
          builder.ClearProviders();
-         builder.AddJsonConsole();
+         builder.AddSerilog(logger);
       });
 
       services.AddTransient<ILambdaResultExecutor<StreamResult>, StreamResult.Executor>();
@@ -134,5 +143,29 @@ public class LambdaListenerBuilder
 
       httpClient.DefaultRequestHeaders.Add("User-Agent", userAgentString);
       httpClient.Timeout = RuntimeApiHttpTimeout;
+   }
+
+   private class CommitSha : ILogEventEnricher
+   {
+      private readonly Action<LogEvent> _action;
+
+      public CommitSha(string? commitSha)
+      {
+         if (!string.IsNullOrWhiteSpace(commitSha))
+         {
+            var logEventProperty = new LogEventProperty("CommitSha", new ScalarValue(commitSha));
+
+            _action = logEvent => logEvent.AddPropertyIfAbsent(logEventProperty);
+         }
+         else
+         {
+            _action = _ => { };
+         }
+      }
+
+      public void Enrich(LogEvent logEvent, ILogEventPropertyFactory _)
+      {
+         _action(logEvent);
+      }
    }
 }
