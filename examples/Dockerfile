@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:6.0
+FROM mcr.microsoft.com/dotnet/sdk:8.0
 WORKDIR /app
 
 RUN apt-get update \
@@ -16,5 +16,5 @@ COPY . .
 RUN dotnet publish --configuration Release --self-contained --runtime linux-x64 ./Lambda.Basic.Example/Lambda.Basic.Example.csproj
 RUN dotnet publish --configuration Release --self-contained --runtime linux-x64 ./Lambda.Middleware.Example/Lambda.Middleware.Example.csproj
 
-RUN cd /app/Lambda.Basic.Example/bin/Release/net6.0/linux-x64/publish && zip -r /app/Lambda.Basic.Example.zip .
-RUN cd /app/Lambda.Middleware.Example/bin/Release/net6.0/linux-x64/publish && zip -r /app/Lambda.Middleware.Example.zip .
+RUN cd /app/Lambda.Basic.Example/bin/Release/net8.0/linux-x64/publish && zip -r /app/Lambda.Basic.Example.zip .
+RUN cd /app/Lambda.Middleware.Example/bin/Release/net8.0/linux-x64/publish && zip -r /app/Lambda.Middleware.Example.zip .

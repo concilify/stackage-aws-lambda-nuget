@@ -1,9 +1,9 @@
 using System;
 using System.Threading.Tasks;
 using Amazon.Lambda.Core;
-using Lambda.Middleware.Example.Integrations;
 using Lambda.Middleware.Example.Model;
 using Stackage.Aws.Lambda.Abstractions;
+using Stackage.Aws.Lambda.Results;
 
 namespace Lambda.Middleware.Example.Handler
 {
@@ -28,7 +28,7 @@ namespace Lambda.Middleware.Example.Handler
             await Task.Delay(ParseDelay(input.Action), _deadlineCancellation.Token);
          }
 
-         return new HttpObjectResult(new OutputPoco {Action = input.Action});
+         return new ObjectResult(new OutputPoco {Action = input.Action});
       }
 
       private static int ParseDelay(string action)

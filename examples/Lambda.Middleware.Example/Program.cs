@@ -9,6 +9,6 @@ using var consoleLifetime = new ConsoleLifetime();
 await new LambdaListenerBuilder()
    .UseHandler<ObjectLambdaHandler, InputPoco>()
    .UseStartup<LambdaStartup>()
-   .UseSerializer<CamelCaseLambdaJsonSerializer>()
+   .UseSerializer<SourceGeneratorLambdaJsonSerializer<MiddlewareExampleJsonSerializerContext>>()
    .Build()
    .ListenAsync(consoleLifetime.Token);
