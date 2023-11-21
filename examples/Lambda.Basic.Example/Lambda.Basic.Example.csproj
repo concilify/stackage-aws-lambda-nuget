@@ -24,7 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Stackage.Aws.Lambda" Version="0.13.0-preview002" />
+    <PackageReference Include="Stackage.Aws.Lambda" Version="0.13.0-preview003" />
   </ItemGroup>
 
 </Project>
