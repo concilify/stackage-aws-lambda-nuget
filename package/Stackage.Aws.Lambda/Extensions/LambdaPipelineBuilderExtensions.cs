@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.DependencyInjection;
 using Stackage.Aws.Lambda.Abstractions;
 
@@ -6,7 +7,7 @@ namespace Stackage.Aws.Lambda.Extensions
 {
    public static class LambdaPipelineBuilderExtensions
    {
-      public static ILambdaPipelineBuilder Use<TMiddleware>(this ILambdaPipelineBuilder pipelineBuilder)
+      public static ILambdaPipelineBuilder Use<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]TMiddleware>(this ILambdaPipelineBuilder pipelineBuilder)
          where TMiddleware : ILambdaMiddleware
       {
          return pipelineBuilder.Use(next =>
