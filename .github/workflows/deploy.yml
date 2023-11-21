@@ -8,7 +8,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5      # Align with role-duration-seconds
 
     env:
       DOTNET_NOLOGO: true
@@ -34,18 +34,26 @@ jobs:
       working-directory: ./publish/basic
       run: zip -r ../../Lambda.Basic.Example.zip .
 
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: eu-west-2
+        role-duration-seconds: 300
+
+    - name: Set COMMIT_SHA
+      run: echo "COMMIT_SHA=`echo ${{ github.sha }} | cut -c1-8`" >> $GITHUB_ENV
+
     - name: Update Function Configuration
-      run: |
-        aws lambda update-function-configuration --function-name lambda-basic-example --environment "Variables={COMMIT_SHA=${{ github.sha }},DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=true}"
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        AWS_DEFAULT_REGION: eu-west-2
+      run: >
+        aws lambda update-function-configuration
+          --function-name lambda-basic-example
+          --environment "Variables={COMMIT_SHA=${COMMIT_SHA},DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=true}"
 
     - name: Update Function Code
-      run: |
-        aws lambda update-function-code --function-name lambda-basic-example --zip-file fileb://Lambda.Basic.Example.zip --publish
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        AWS_DEFAULT_REGION: eu-west-2
+      run: >
+        aws lambda update-function-code
+          --function-name lambda-basic-example
+          --zip-file fileb://Lambda.Basic.Example.zip
+          --publish
