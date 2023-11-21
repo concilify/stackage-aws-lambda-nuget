@@ -58,11 +58,8 @@ namespace Stackage.Aws.Lambda
 
          builder.SetBasePath(hostEnvironment.ContentRootPath);
          builder.AddJsonFile("appsettings.json", optional: true);
-
-         if (hostEnvironment.EnvironmentName != null)
-         {
-            builder.AddJsonFile($"appsettings.{hostEnvironment.EnvironmentName}.json", optional: true);
-         }
+         builder.AddJsonFile($"appsettings.{hostEnvironment.EnvironmentName}.json", optional: true);
+         builder.AddEnvironmentVariables();
 
          return builder.Build();
       }

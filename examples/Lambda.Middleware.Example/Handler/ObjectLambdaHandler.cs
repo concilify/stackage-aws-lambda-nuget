@@ -42,17 +42,5 @@ namespace Lambda.Middleware.Example.Handler
 
          return delay;
       }
-
-      private static int ParseDelay(string action)
-      {
-         var parts = action.Split(":");
-
-         if (parts.Length <= 1 || !int.TryParse(parts[1], out var delay))
-         {
-            return 5000;
-         }
-
-         return delay;
-      }
    }
 }
