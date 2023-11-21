@@ -17,16 +17,3 @@ RUN dotnet publish --configuration Release --self-contained --runtime linux-x64 
 
 RUN cd /app/Lambda.Basic.Example/bin/Release/net8.0/linux-x64/publish && zip -r /app/Lambda.Basic.Example.zip .
 RUN cd /app/Lambda.Middleware.Example/bin/Release/net8.0/linux-x64/publish && zip -r /app/Lambda.Middleware.Example.zip .
-
-# aws lambda update-function-code --function-name lambda-basic-example --zip-file fileb://Lambda.Basic.Example.zip --publish
-# aws lambda update-function-code --function-name lambda-basic-example --zip-file fileb://Lambda.Basic.Example.zip --publish
-    --dry-run
-
-# workflow to deploy on push to deploy branch
-
-#dotnet publish ./Lambda.Basic.Example/Lambda.Basic.Example.csproj --output publish/basic
-
-#aws lambda update-function-configuration --function-name lambda-basic-example --environment "Variables={COMMIT_SHA=abc,DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=true}"
-
-different jobs to deploy both lambdas \
-    use COMMIT_SHA in middleware for logging scope

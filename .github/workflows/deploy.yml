@@ -49,7 +49,7 @@ jobs:
       run: |
         aws lambda update-function-configuration \
           --function-name lambda-basic-example \
-          --environment "Variables={COMMIT_SHA=${COMMIT_SHA},DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=true}"
+          --environment "Variables={COMMIT_SHA=${COMMIT_SHA}}"
 
     - name: Update Function Code
       run: |
