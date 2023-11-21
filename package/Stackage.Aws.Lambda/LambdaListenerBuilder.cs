@@ -87,7 +87,7 @@ public class LambdaListenerBuilder
       {
          builder.AddConfiguration(hostServiceProvider.Configuration.GetSection("Logging"));
          builder.ClearProviders();
-         builder.AddJsonConsole();
+         builder.AddJsonConsole(c => { c.IncludeScopes = true; c.JsonWriterOptions. });
       });
 
       services.AddTransient<ILambdaResultExecutor<StreamResult>, StreamResult.Executor>();

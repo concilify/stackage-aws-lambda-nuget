@@ -32,6 +32,7 @@ namespace Lambda.Middleware.Example
       public void ConfigurePipeline(ILambdaPipelineBuilder pipelineBuilder)
       {
          // Middleware runs in the order listed here
+         pipelineBuilder.Use<CommitShaScopeMiddleware>();
          pipelineBuilder.Use<RequestLoggingMiddleware>();
          pipelineBuilder.Use<ExceptionHandlingMiddleware>();
          pipelineBuilder.Use<DeadlineCancellationMiddleware>();
