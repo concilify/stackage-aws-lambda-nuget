@@ -5,8 +5,7 @@
       "commandName": "Project",
       "environmentVariables": {
         "DOTNET_ENVIRONMENT": "Development",
-        "AWS_LAMBDA_RUNTIME_API": "localhost:9001/middleware",
-        "COMMIT_SHA": "ArbitraryCommitSha"
+        "AWS_LAMBDA_RUNTIME_API": "localhost:9001/middleware"
       }
     }
   }

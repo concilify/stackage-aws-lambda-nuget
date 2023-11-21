@@ -54,14 +54,12 @@ namespace Stackage.Aws.Lambda
 
       private static IConfiguration CreateConfiguration(IHostEnvironment hostEnvironment)
       {
-         var builder = new ConfigurationBuilder();
-
-         builder.SetBasePath(hostEnvironment.ContentRootPath);
-         builder.AddJsonFile("appsettings.json", optional: true);
-         builder.AddJsonFile($"appsettings.{hostEnvironment.EnvironmentName}.json", optional: true);
-         builder.AddEnvironmentVariables();
-
-         return builder.Build();
+         return new ConfigurationBuilder()
+            .SetBasePath(hostEnvironment.ContentRootPath)
+            .AddJsonFile("appsettings.json", optional: true)
+            .AddJsonFile($"appsettings.{hostEnvironment.EnvironmentName}.json", optional: true)
+            .AddEnvironmentVariables()
+            .Build();
       }
 
       private static string ResolveContentRootPath(string? contentRootPath, string basePath)
