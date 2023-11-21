@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:8.0
 WORKDIR /app
 
 RUN apt-get update \
@@ -12,6 +12,7 @@ RUN dotnet restore ./Lambda.Middleware.Example/Lambda.Middleware.Example.csproj
 
 COPY . .
 
+# Amazon.Lambda.Tools doesn't yet support .NET 8, so reverting to dotnet publish and zip rather than dotnet lambda package
 RUN dotnet publish --configuration Release --self-contained --runtime linux-x64 ./Lambda.Basic.Example/Lambda.Basic.Example.csproj
 RUN dotnet publish --configuration Release --self-contained --runtime linux-x64 ./Lambda.Middleware.Example/Lambda.Middleware.Example.csproj
 
