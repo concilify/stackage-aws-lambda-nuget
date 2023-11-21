@@ -9,23 +9,25 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+
     env:
       DOTNET_NOLOGO: true
+
     steps:
     - name: Checkout
       uses: actions/checkout@v4
-    - name: Setup .NET 6.0
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: '6.0.x'
+
     - name: Setup .NET 8.0
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: '8.0.x'
+
     - name: Set VERSION
       run: echo "VERSION=${GITHUB_REF/refs\/tags\/v/}" >> $GITHUB_ENV
+
     - name: Pack
       run: dotnet pack --configuration Release -p:Version=${VERSION} --output .
+
     - name: Push
       run: dotnet nuget push Stackage.*.${VERSION}.nupkg --source https://api.nuget.org/v3/index.json --api-key ${NUGET_API_KEY}
       env:
