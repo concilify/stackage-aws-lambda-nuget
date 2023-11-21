@@ -34,6 +34,9 @@ jobs:
       working-directory: ./publish/basic
       run: zip -r ../../Lambda.Basic.Example.zip .
 
+    - name: Set COMMIT_SHA
+      run: echo "COMMIT_SHA=`echo ${{ github.sha }} | cut -c1-8`" >> $GITHUB_ENV
+
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:
@@ -42,18 +45,15 @@ jobs:
         aws-region: eu-west-2
         role-duration-seconds: 300
 
-    - name: Set COMMIT_SHA
-      run: echo "COMMIT_SHA=`echo ${{ github.sha }} | cut -c1-8`" >> $GITHUB_ENV
-
     - name: Update Function Configuration
-      run: >
-        aws lambda update-function-configuration
-          --function-name lambda-basic-example
+      run: |
+        aws lambda update-function-configuration \
+          --function-name lambda-basic-example \
           --environment "Variables={COMMIT_SHA=${COMMIT_SHA},DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=true}"
 
     - name: Update Function Code
-      run: >
-        aws lambda update-function-code
-          --function-name lambda-basic-example
-          --zip-file fileb://Lambda.Basic.Example.zip
+      run: |
+        aws lambda update-function-code \
+          --function-name lambda-basic-example \
+          --zip-file fileb://Lambda.Basic.Example.zip \
           --publish
