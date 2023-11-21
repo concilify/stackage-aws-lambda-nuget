@@ -22,6 +22,7 @@ jobs:
       with:
         dotnet-version: '6.0.x'
 
+    # Amazon.Lambda.Tools doesn't yet support .NET 8, so reverting to dotnet publish and zip rather than dotnet lambda package
     - name: Publish
       run: dotnet publish --configuration Release --self-contained --runtime linux-x64 ./examples/Lambda.Basic.Example/Lambda.Basic.Example.csproj --output publish/basic
 
@@ -69,6 +70,7 @@ jobs:
       with:
         dotnet-version: '6.0.x'
 
+    # Amazon.Lambda.Tools doesn't yet support .NET 8, so reverting to dotnet publish and zip rather than dotnet lambda package
     - name: Publish
       run: dotnet publish --configuration Release --self-contained --runtime linux-x64 ./examples/Lambda.Middleware.Example/Lambda.Middleware.Example.csproj --output publish/middleware
 
