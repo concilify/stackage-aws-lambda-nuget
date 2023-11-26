@@ -1,7 +1,6 @@
 using System.Linq;
 using System.Threading.Tasks;
 using NUnit.Framework;
-using Stackage.Aws.Lambda.Extensions;
 using Stackage.Aws.Lambda.FakeRuntime.Model;
 using Stackage.Aws.Lambda.Tests.Handlers;
 using Stackage.Aws.Lambda.Tests.Model;
@@ -15,14 +14,13 @@ namespace Stackage.Aws.Lambda.Tests.Scenarios
       [OneTimeSetUp]
       public async Task setup_scenario()
       {
-         var functions = await TestHost.RunAsync<StringPoco>(
-            builder =>
+         var functions = await TestHost.RunAsync(
+            "my-function",
+            new LambdaRequest("req-id", "{\"value\":\"AnyString\"}"),
+            configureLambdaListener: builder =>
             {
                builder.UseHandler<DecorateObjectLambdaHandler, StringPoco>();
-            },
-            null,
-            "my-function",
-            new LambdaRequest("req-id", "{\"value\":\"AnyString\"}"));
+            });
          _responses = functions.Single().Value.CompletedRequests;
       }
 

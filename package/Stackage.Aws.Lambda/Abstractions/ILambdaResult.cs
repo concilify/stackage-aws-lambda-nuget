@@ -1,10 +1,10 @@
-using System.IO;
+using System;
+using System.Threading.Tasks;
 using Amazon.Lambda.Core;
 
-namespace Stackage.Aws.Lambda.Abstractions
+namespace Stackage.Aws.Lambda.Abstractions;
+
+public interface ILambdaResult
 {
-   public interface ILambdaResult
-   {
-      Stream SerializeResult(ILambdaSerializer serializer, LambdaContext context);
-   }
+   Task ExecuteResultAsync(ILambdaContext context, IServiceProvider requestServices);
 }

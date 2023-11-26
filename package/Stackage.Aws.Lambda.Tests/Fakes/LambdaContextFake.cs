@@ -1,18 +1,25 @@
 using System;
+using Amazon.Lambda.Core;
 using FakeItEasy;
-using Stackage.Aws.Lambda.Abstractions;
 
 namespace Stackage.Aws.Lambda.Tests.Fakes
 {
    public static class LambdaContextFake
    {
-      public static LambdaContext Valid() => WithRemainingTime(TimeSpan.FromSeconds(30));
+      public static ILambdaContext Valid() => With(remainingTime: TimeSpan.FromSeconds(30));
 
-      public static LambdaContext WithRemainingTime(TimeSpan remainingTime)
+      public static ILambdaContext WithRemainingTime(TimeSpan remainingTime) => With(remainingTime: remainingTime);
+
+      public static ILambdaContext With(
+         string awsRequestId = "ValidRequestId",
+         TimeSpan? remainingTime = null)
       {
-         var context = A.Fake<LambdaContext>();
+         remainingTime ??= TimeSpan.FromMinutes(1);
 
-         A.CallTo(() => context.RemainingTime).Returns(remainingTime);
+         var context = A.Fake<ILambdaContext>();
+
+         A.CallTo(() => context.AwsRequestId).Returns(awsRequestId);
+         A.CallTo(() => context.RemainingTime).Returns(remainingTime.Value);
 
          return context;
       }

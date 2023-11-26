@@ -1,40 +1,40 @@
-using System.Collections.Generic;
+using System;
 using System.Diagnostics;
+using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
+using Amazon.Lambda.Core;
 using Microsoft.Extensions.Logging;
 using Stackage.Aws.Lambda.Abstractions;
 
 namespace Lambda.Middleware.Example.Middleware
 {
-   public class RequestLoggingMiddleware<TRequest> : ILambdaMiddleware<TRequest>
+   public class RequestLoggingMiddleware : ILambdaMiddleware
    {
-      private readonly ILogger<RequestLoggingMiddleware<TRequest>> _logger;
+      private readonly ILogger<RequestLoggingMiddleware> _logger;
 
-      public RequestLoggingMiddleware(ILogger<RequestLoggingMiddleware<TRequest>> logger)
+      public RequestLoggingMiddleware(ILogger<RequestLoggingMiddleware> logger)
       {
          _logger = logger;
       }
 
       public async Task<ILambdaResult> InvokeAsync(
-         TRequest request,
-         LambdaContext context,
-         PipelineDelegate<TRequest> next)
+         Stream inputStream,
+         ILambdaContext context,
+         IServiceProvider requestServices,
+         PipelineDelegate next,
+         CancellationToken requestAborted)
       {
-         using (_logger.BeginScope(new Dictionary<string, object> {{"AwsRequestId", context.AwsRequestId}}))
-         {
-            _logger.LogInformation("Request started");
+         var timer = Stopwatch.StartNew();
 
-            var timer = Stopwatch.StartNew();
+         var lambdaResult = await next(inputStream, context, requestServices, requestAborted);
 
-            try
-            {
-               return await next(request, context);
-            }
-            finally
-            {
-               _logger.LogInformation("Request completed in {durationMs}ms", timer.ElapsedMilliseconds);
-            }
-         }
+         _logger.LogInformation(
+            "Request returned {lambdaResultType} in {durationMs}ms",
+            lambdaResult.GetType().Name,
+            timer.ElapsedMilliseconds);
+
+         return lambdaResult;
       }
    }
 }

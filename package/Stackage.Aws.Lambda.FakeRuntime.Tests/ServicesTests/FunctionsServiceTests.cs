@@ -2,9 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using FakeItEasy;
 using FluentAssertions;
-using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using NUnit.Framework;
 using Stackage.Aws.Lambda.FakeRuntime.Model;
 using Stackage.Aws.Lambda.FakeRuntime.Services;
@@ -241,7 +240,7 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Tests.ServicesTests
          return new FunctionsService(
             functions,
             idGenerator,
-            A.Fake<ILogger<FunctionsService>>());
+            NullLogger<FunctionsService>.Instance);
       }
    }
 }

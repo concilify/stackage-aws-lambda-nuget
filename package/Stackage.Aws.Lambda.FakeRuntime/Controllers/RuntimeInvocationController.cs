@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Stackage.Aws.Lambda.FakeRuntime.Services;
@@ -28,9 +29,9 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Controllers
       {
          var (awsRequestId, body) = await _functionsService.WaitForNextInvocationAsync(functionName, HttpContext.RequestAborted);
 
-         Response.Headers.Add("Lambda-Runtime-Aws-Request-Id", awsRequestId);
-         Response.Headers.Add("Lambda-Runtime-Invoked-Function-Arn", $"arn:aws:lambda:region-name:account-name:function:{functionName}");
-         Response.Headers.Add("Lambda-Runtime-Deadline-Ms", (DateTimeOffset.UtcNow.Add(_options.DeadlineTimeout).ToUnixTimeSeconds() * 1000).ToString());
+         Response.Headers.Append("Lambda-Runtime-Aws-Request-Id", awsRequestId);
+         Response.Headers.Append("Lambda-Runtime-Invoked-Function-Arn", $"arn:aws:lambda:region-name:account-name:function:{functionName}");
+         Response.Headers.Append("Lambda-Runtime-Deadline-Ms", (DateTimeOffset.UtcNow.Add(_options.DeadlineTimeout).ToUnixTimeSeconds() * 1000).ToString());
 
          return Content(body, "application/json", Encoding.UTF8);
       }

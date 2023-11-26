@@ -1,9 +1,10 @@
 using System.Threading.Tasks;
+using Amazon.Lambda.Core;
 
 namespace Stackage.Aws.Lambda.Abstractions
 {
-   public interface ILambdaHandler<in TRequest>
+   public interface ILambdaHandler<in TInput>
    {
-      Task<ILambdaResult> HandleAsync(TRequest request, LambdaContext context);
+      Task<ILambdaResult> HandleAsync(TInput input, ILambdaContext context);
    }
 }

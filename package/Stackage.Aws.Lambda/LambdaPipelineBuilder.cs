@@ -3,33 +3,34 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Stackage.Aws.Lambda.Abstractions;
+using Stackage.Aws.Lambda.Executors;
 
 namespace Stackage.Aws.Lambda
 {
-   public class LambdaPipelineBuilder<TRequest> : ILambdaPipelineBuilder<TRequest>
+   public class LambdaPipelineBuilder : ILambdaPipelineBuilder
    {
-      private readonly IList<Func<PipelineDelegate<TRequest>, PipelineDelegate<TRequest>>> _components =
-         new List<Func<PipelineDelegate<TRequest>, PipelineDelegate<TRequest>>>();
+      private readonly IList<Func<PipelineDelegate, PipelineDelegate>> _components =
+         new List<Func<PipelineDelegate, PipelineDelegate>>();
 
-      public ILambdaPipelineBuilder<TRequest> Use(Func<PipelineDelegate<TRequest>, PipelineDelegate<TRequest>> middleware)
+      public ILambdaPipelineBuilder Use(Func<PipelineDelegate, PipelineDelegate> middleware)
       {
          _components.Add(middleware);
 
          return this;
       }
 
-      public PipelineDelegate<TRequest> Build()
+      public PipelineDelegate Build()
       {
-         PipelineDelegate<TRequest> pipeline = (request, context) =>
+         PipelineDelegate pipeline = (inputStream, context, requestServices, requestAborted) =>
          {
-            var handlerAsync = context.RequestServices.GetService<PipelineDelegate<TRequest>>();
+            var handlerExecutor = requestServices.GetService<ILambdaHandlerExecutor>();
 
-            if (handlerAsync == null)
+            if (handlerExecutor == null)
             {
-               throw new InvalidOperationException($"No handler configured. Please specify a handler via ILambdaHostBuilder.UseHandler.");
+               throw new InvalidOperationException("No handler configured. Please specify a handler via ILambdaHostBuilder.UseHandler.");
             }
 
-            return handlerAsync(request, context);
+            return handlerExecutor.ExecuteAsync(inputStream, context, requestAborted);
          };
 
          foreach (var component in _components.Reverse())

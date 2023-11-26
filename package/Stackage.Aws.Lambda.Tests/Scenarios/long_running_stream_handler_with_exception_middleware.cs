@@ -1,10 +1,8 @@
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using NUnit.Framework;
-using Stackage.Aws.Lambda.Extensions;
 using Stackage.Aws.Lambda.FakeRuntime.Model;
 using Stackage.Aws.Lambda.Tests.Handlers;
 
@@ -18,20 +16,20 @@ namespace Stackage.Aws.Lambda.Tests.Scenarios
       public async Task setup_scenario()
       {
          var functions = await TestHost.RunAsync(
-            builder =>
+            "my-function",
+            new LambdaRequest("req-id", "AnyString"),
+            configureLambdaListener: builder =>
             {
-               builder.UseStartup<StartupWithDeadlineCancellation<Stream>>();
+               builder.UseStartup<StartupWithDeadlineCancellation>();
                builder.UseHandler<LongRunningStreamLambdaHandler>();
             },
-            builder =>
+            configureConfiguration: builder =>
             {
                builder.AddInMemoryCollection(new Dictionary<string, string>
                {
-                  {"FAKERUNTIMEOPTIONS:DEADLINETIMEOUT", "00:00:01"}
+                  {"FAKERUNTIMEOPTIONS:DEADLINETIMEOUT", "00:00:03"}
                });
-            },
-            "my-function",
-            new LambdaRequest("req-id", "AnyString"));
+            });
          _responses = functions.Single().Value.CompletedRequests;
       }
 
@@ -44,7 +42,10 @@ namespace Stackage.Aws.Lambda.Tests.Scenarios
       [Test]
       public void handler_received_request_and_returned_response()
       {
-         Assert.That(_responses.Values.Single().ResponseBody, Is.EqualTo("Client Closed Request"));
+         var responseBody = _responses.Values.Single().ResponseBody;
+
+         Assert.That(responseBody, Contains.Substring("\"errorType\": \"TaskCanceledException\""));
+         Assert.That(responseBody, Contains.Substring("\"errorMessage\": \"The request was cancelled due to lack of remaining time and responded promptly; it may or may not have completed\""));
       }
    }
 }
