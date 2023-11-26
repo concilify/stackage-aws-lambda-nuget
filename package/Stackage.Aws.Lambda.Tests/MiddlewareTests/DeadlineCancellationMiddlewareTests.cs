@@ -5,159 +5,252 @@ using System.Threading;
 using System.Threading.Tasks;
 using Amazon.Lambda.Core;
 using FakeItEasy;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using NUnit.Framework;
 using Stackage.Aws.Lambda.Abstractions;
 using Stackage.Aws.Lambda.Middleware;
+using Stackage.Aws.Lambda.Options;
 using Stackage.Aws.Lambda.Results;
 using Stackage.Aws.Lambda.Tests.Fakes;
+using Microsoft.Extensions.Options;
+using NUnit.Framework.Constraints;
 
 namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
 {
    public class DeadlineCancellationMiddlewareTests
    {
-      [Test]
-      public async Task returns_result_from_inner_delegate()
+      [TestCaseSource(nameof(NonCancellationTestCases))]
+      public async Task invoke_returns_pipeline_result(
+         PipelineDelegate pipelineDelegate,
+         ILambdaContext context,
+         DeadlineCancellationOptions options,
+         ILambdaResult expectedLambdaResult,
+         Constraint elapsedMsConstraint)
       {
-         var expectedResult = A.Fake<ILambdaResult>();
-
-         var middleware = CreateMiddleware();
-
-         var pipelineDelegate = PipelineDelegateFake.Returns(expectedResult);
-
-         var result = await middleware.InvokeAsync(
-            new MemoryStream(),
-            LambdaContextFake.Valid(),
-            A.Fake<IServiceProvider>(),
-            pipelineDelegate,
-            CancellationToken.None);
-
-         Assert.That(result, Is.SameAs(expectedResult));
-      }
-
-      // when_remaining_time_is_fractionally_larger_than_shutdown_timeout
-      [TestCase(0, 10)]
-      [TestCase(1000, 1010)]
-      // when_remaining_time_is_less_than_or_equal_to_shutdown_timeout
-      [TestCase(0, 0)]
-      [TestCase(50, 50)]
-      [TestCase(1000, 1000)]
-      [TestCase(50, 49)]
-      [TestCase(50, 1)]
-      [TestCase(50, -1)]
-      public static async Task invoke_is_cancelled_almost_immediately_and_returns_cancellation_result(
-         int shutdownTimeoutMs,
-         int remainingMs)
-      {
-         var configuration = ConfigurationFake.WithShutdownTimeoutMs(shutdownTimeoutMs);
          var deadlineCancellation = new DeadlineCancellation();
 
-         var middleware = CreateMiddleware(
-            configuration: configuration,
+         var (result, elapsedMs) = await InvokeAsync(
+            pipelineDelegate: pipelineDelegate,
+            context: context,
+            options: options,
             cancellationInitializer: deadlineCancellation);
 
-         async Task<ILambdaResult> LongRunningInnerDelegate(
-            Stream inputStream,
-            ILambdaContext context,
-            IServiceProvider requestServices,
-            CancellationToken requestAborted)
-         {
-            await Task.Delay(TimeSpan.FromHours(1), deadlineCancellation.Token);
+         Assert.That(result, Is.SameAs(expectedLambdaResult));
+         Assert.That(deadlineCancellation.Token.IsCancellationRequested, Is.False);
+         Assert.That(elapsedMs, elapsedMsConstraint);
+      }
 
-            return new StringResult("Should be cancelled before getting this far");
-         }
+      [TestCaseSource(nameof(CancellationTestCases))]
+      public async Task invoke_returns_cancellation_result(
+         PipelineDelegate pipelineDelegate,
+         ILambdaContext context,
+         DeadlineCancellationOptions options,
+         string expectedCancellationResultMessage,
+         bool expectedIsCancellationRequested,
+         Constraint elapsedMsConstraint)
+      {
+         var deadlineCancellation = new DeadlineCancellation();
+
+         var (result, elapsedMs) = await InvokeAsync(
+            pipelineDelegate: pipelineDelegate,
+            context: context,
+            options: options,
+            cancellationInitializer: deadlineCancellation);
+
+         Assert.That(result, Is.InstanceOf<CancellationResult>());
+         var cancellationResult = (CancellationResult) result;
+         Assert.That(cancellationResult.Message, Is.EqualTo(expectedCancellationResultMessage));
+         Assert.That(deadlineCancellation.Token.IsCancellationRequested, Is.EqualTo(expectedIsCancellationRequested));
+         Assert.That(elapsedMs, elapsedMsConstraint);
+      }
+
+#if NET8_0
+      [Test]
+      public async Task cancellation_token_passed_to_inner_delegate_can_be_cancelled_by_incoming_cancellation_token()
+      {
+         var cancellationTokenSource = new CancellationTokenSource(200);
+
+         var deadlineCancellation = new DeadlineCancellation();
+
+         var (result, elapsedMs) = await InvokeAsync(
+            PipelineDelegateFake.LongRunningAndExpectsToBeCancelled(),
+            LambdaContextFake.WithRemainingTime(TimeSpan.FromSeconds(10)),
+            options: CreateDeadlineCancellationOptions(1, 10),
+            cancellationInitializer: deadlineCancellation,
+            requestAborted: cancellationTokenSource.Token);
+
+         Assert.That(result, Is.InstanceOf<CancellationResult>());
+         var cancellationResult = (CancellationResult) result;
+         Assert.That(cancellationResult.Message, Is.EqualTo("The request was cancelled by the host; it may or may not have completed"));
+
+         Assert.That(deadlineCancellation.Token.IsCancellationRequested, Is.True);
+
+         // Middleware should run for c.200ms
+         Assert.That(elapsedMs, Is.LessThan(220));
+      }
+#endif
+
+      [Test]
+      public void bubbles_exception_to_caller_when_inner_delegate_cancelled_by_another_cancellation_token()
+      {
+         var exceptionToThrow = new OperationCanceledException();
+
+         var exception = Assert.ThrowsAsync<OperationCanceledException>(async () =>
+         {
+            await InvokeAsync(
+               PipelineDelegateFake.Throws(exceptionToThrow),
+               LambdaContextFake.WithRemainingTime(TimeSpan.FromSeconds(10)),
+               options: CreateDeadlineCancellationOptions(1, 10));
+         });
+
+         Assert.That(exception, Is.SameAs(exceptionToThrow));
+      }
+
+      [Test]
+      public void bubbles_exception_to_caller_when_inner_delegate_throws_after_cancellation()
+      {
+         var exceptionToThrow = new Exception();
+
+         var exception = Assert.ThrowsAsync<Exception>(async () =>
+         {
+            await InvokeAsync(
+               PipelineDelegateFake.ThrowsAfterCancellation(exceptionToThrow),
+               LambdaContextFake.WithRemainingTime(TimeSpan.FromMilliseconds(200)),
+               options: CreateDeadlineCancellationOptions(0, 100));
+         });
+
+         Assert.That(exception, Is.SameAs(exceptionToThrow));
+      }
+
+      private static TestCaseData[] NonCancellationTestCases()
+      {
+         var lambdaResult = A.Fake<ILambdaResult>();
+
+         return new[]
+         {
+            new TestCaseData(
+                  PipelineDelegateFake.Returns(lambdaResult, latencyMs: 70),
+                  LambdaContextFake.WithRemainingTime(TimeSpan.FromMilliseconds(200)),
+                  CreateDeadlineCancellationOptions(30, 70),
+                  lambdaResult,
+                  Is.LessThan(100)) // Middleware should run for c.70ms
+               .SetName("Request completes before hard and soft intervals expire"),
+            new TestCaseData(
+                  PipelineDelegateFake.Returns(lambdaResult, latencyMs: 70),
+                  LambdaContextFake.WithRemainingTime(TimeSpan.FromMilliseconds(200)),
+                  CreateDeadlineCancellationOptions(0, 100),
+                  lambdaResult,
+                  Is.LessThan(120)) // Middleware should run for c.70ms
+               .SetName("Request completes before soft interval expires"),
+            new TestCaseData(
+                  PipelineDelegateFake.Returns(lambdaResult, latencyMs: 70),
+                  LambdaContextFake.WithRemainingTime(TimeSpan.FromMilliseconds(200)),
+                  CreateDeadlineCancellationOptions(100, 0),
+                  lambdaResult,
+                  Is.LessThan(120)) // Middleware should run for c.70ms
+               .SetName("Request completes before hard interval expires")
+         };
+      }
+
+      private static TestCaseData[] CancellationTestCases()
+      {
+         const string shortcutCancellationMessage =
+            "The request was shortcut due to lack of remaining time; the handler was not invoked";
+         const string hardCancellationMessage =
+            "The request was cancelled due to lack of remaining time but failed to respond; it may or may not have completed";
+         const string softCancellationMessage =
+            "The request was cancelled due to lack of remaining time and responded promptly; it may or may not have completed";
+
+         return new[]
+         {
+            new TestCaseData(
+                  PipelineDelegateFake.Throws(),
+                  LambdaContextFake.WithRemainingTime(TimeSpan.FromMilliseconds(200)),
+                  CreateDeadlineCancellationOptions(100, 101),
+                  shortcutCancellationMessage,
+                  false,
+                  Is.LessThan(20)) // Middleware should run for hardly any time due to shortcut
+               .SetName("Request is shortcut when combined hard and soft intervals greater than remaining time"),
+            new TestCaseData(
+                  PipelineDelegateFake.Throws(),
+                  LambdaContextFake.WithRemainingTime(TimeSpan.FromMilliseconds(200)),
+                  CreateDeadlineCancellationOptions(0, 201),
+                  shortcutCancellationMessage,
+                  false,
+                  Is.LessThan(20)) // Middleware should run for hardly any time due to shortcut
+               .SetName("Request is shortcut when combined soft interval alone is greater than remaining time"),
+            new TestCaseData(
+                  PipelineDelegateFake.Throws(),
+                  LambdaContextFake.WithRemainingTime(TimeSpan.FromMilliseconds(200)),
+                  CreateDeadlineCancellationOptions(201, 0),
+                  shortcutCancellationMessage,
+                  false,
+                  Is.LessThan(20)) // Middleware should run for hardly any time due to shortcut
+               .SetName("Request is shortcut when combined hard interval alone is greater than remaining time"),
+            new TestCaseData(
+                  PipelineDelegateFake.LongRunningAndExpectsToBeCancelled(),
+                  LambdaContextFake.WithRemainingTime(TimeSpan.FromMilliseconds(200)),
+                  CreateDeadlineCancellationOptions(100, 90),
+                  softCancellationMessage,
+                  true,
+                  Is.LessThan(40)) // Middleware should run for c.10ms (remainingTime - hardTimeout - softTimeout)
+               .SetName("Request is cancelled gracefully when inner pipeline responds to cancellation token"),
+            new TestCaseData(
+                  PipelineDelegateFake.LongRunningIgnoresCancellationToken(),
+                  LambdaContextFake.WithRemainingTime(TimeSpan.FromMilliseconds(200)),
+                  CreateDeadlineCancellationOptions(100, 90),
+                  hardCancellationMessage,
+                  true,
+                  Is.LessThan(130)) // Middleware should run for c.100ms (remainingTime - hardTimeout)
+               .SetName("Request is cancelled forcibly when inner pipeline ignores to cancellation token"),
+         };
+      }
+
+      private static async Task<(ILambdaResult LambdaResult, long ElapsedMs)> InvokeAsync(
+         PipelineDelegate pipelineDelegate,
+         ILambdaContext context,
+         DeadlineCancellationOptions options = null,
+         IDeadlineCancellationInitializer cancellationInitializer = null,
+         CancellationToken requestAborted = default)
+      {
+         var middleware = CreateMiddleware(
+            options: options,
+            cancellationInitializer: cancellationInitializer);
 
          var stopwatch = Stopwatch.StartNew();
 
          var result = await middleware.InvokeAsync(
             new MemoryStream(),
-            LambdaContextFake.WithRemainingTime(TimeSpan.FromMilliseconds(remainingMs)),
-            A.Fake<IServiceProvider>(),
-            LongRunningInnerDelegate,
-            CancellationToken.None);
-
-         Assert.That(result, Is.InstanceOf<CancellationResult>());
-         var cancellationResult = (CancellationResult)result;
-         Assert.That(cancellationResult.Message, Is.EqualTo("The request was cancelled due to expiry of remaining time"));
-         Assert.That(stopwatch.ElapsedMilliseconds, Is.LessThan(400));
-      }
-
-      [Test]
-      public async Task cancellation_token_passed_to_inner_delegate_can_be_cancelled_by_incoming_cancellation_token()
-      {
-         var cancellationTokenSource = new CancellationTokenSource();
-
-         var pipelineDelegate = PipelineDelegateFake.Callback(
-            (_, _, _, requestAborted) =>
-            {
-               Assert.That(requestAborted.IsCancellationRequested, Is.False);
-               cancellationTokenSource.Cancel();
-               Assert.That(requestAborted.IsCancellationRequested, Is.True);
-            });
-
-         var deadlineCancellation = new DeadlineCancellation();
-
-         var middleware = CreateMiddleware(
-            cancellationInitializer: deadlineCancellation);
-
-         await middleware.InvokeAsync(
-            new MemoryStream(),
-            LambdaContextFake.WithRemainingTime(TimeSpan.FromSeconds(10)),
+            context,
             A.Fake<IServiceProvider>(),
             pipelineDelegate,
-            cancellationTokenSource.Token);
+            requestAborted);
 
-         Assert.That(deadlineCancellation.Token.IsCancellationRequested, Is.True);
-         Assert.That(cancellationTokenSource.IsCancellationRequested, Is.True);
+         return (result, stopwatch.ElapsedMilliseconds);
       }
 
-      [Test]
-      public async Task cancellation_token_passed_to_inner_delegate_can_be_cancelled_by_lack_of_time_remaining()
+      private static DeadlineCancellationOptions CreateDeadlineCancellationOptions(int hardIntervalMs, int softIntervalMs)
       {
-         var cancellationTokenSource = new CancellationTokenSource();
-
-         var pipelineDelegate = PipelineDelegateFake.AsyncCallback(
-            async (_, _, _, requestAborted) =>
-            {
-               Assert.That(requestAborted.IsCancellationRequested, Is.False);
-
-               await Task.Delay(10000, requestAborted);
-
-               Assert.That(requestAborted.IsCancellationRequested, Is.True);
-            });
-
-         var configuration = ConfigurationFake.WithShutdownTimeoutMs(0);
-         var deadlineCancellation = new DeadlineCancellation();
-
-         var middleware = CreateMiddleware(
-            configuration: configuration,
-            cancellationInitializer: deadlineCancellation);
-
-         await middleware.InvokeAsync(
-            new MemoryStream(),
-            LambdaContextFake.WithRemainingTime(TimeSpan.FromMilliseconds(200)),
-            A.Fake<IServiceProvider>(),
-            pipelineDelegate,
-            cancellationTokenSource.Token);
-
-         Assert.That(deadlineCancellation.Token.IsCancellationRequested, Is.True);
-         Assert.That(cancellationTokenSource.IsCancellationRequested, Is.False);
+         return new DeadlineCancellationOptions
+         {
+            HardInterval = TimeSpan.FromMilliseconds(hardIntervalMs),
+            SoftInterval = TimeSpan.FromMilliseconds(softIntervalMs),
+         };
       }
 
       private static DeadlineCancellationMiddleware CreateMiddleware(
-         IConfiguration configuration = null,
          IDeadlineCancellationInitializer cancellationInitializer = null,
+         DeadlineCancellationOptions options = null,
          ILogger<DeadlineCancellationMiddleware> logger = null)
       {
-         configuration ??= new ConfigurationBuilder().Build();
          cancellationInitializer ??= A.Fake<IDeadlineCancellationInitializer>();
+         options ??= new DeadlineCancellationOptions();
          logger ??= NullLogger<DeadlineCancellationMiddleware>.Instance;
 
          return new DeadlineCancellationMiddleware(
-            configuration,
             cancellationInitializer,
+            new OptionsWrapper<DeadlineCancellationOptions>(options),
             logger);
       }
    }

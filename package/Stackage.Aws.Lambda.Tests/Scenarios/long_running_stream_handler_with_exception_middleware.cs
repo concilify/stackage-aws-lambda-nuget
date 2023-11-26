@@ -27,7 +27,7 @@ namespace Stackage.Aws.Lambda.Tests.Scenarios
             {
                builder.AddInMemoryCollection(new Dictionary<string, string>
                {
-                  {"FAKERUNTIMEOPTIONS:DEADLINETIMEOUT", "00:00:01"}
+                  {"FAKERUNTIMEOPTIONS:DEADLINETIMEOUT", "00:00:03"}
                });
             });
          _responses = functions.Single().Value.CompletedRequests;
@@ -45,7 +45,7 @@ namespace Stackage.Aws.Lambda.Tests.Scenarios
          var responseBody = _responses.Values.Single().ResponseBody;
 
          Assert.That(responseBody, Contains.Substring("\"errorType\": \"TaskCanceledException\""));
-         Assert.That(responseBody, Contains.Substring("\"errorMessage\": \"The request was cancelled due to expiry of remaining time\""));
+         Assert.That(responseBody, Contains.Substring("\"errorMessage\": \"The request was cancelled due to lack of remaining time and responded promptly; it may or may not have completed\""));
       }
    }
 }
