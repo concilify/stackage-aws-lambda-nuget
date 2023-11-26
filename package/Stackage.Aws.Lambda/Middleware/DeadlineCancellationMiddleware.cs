@@ -1,29 +1,29 @@
 using System;
-using System.Globalization;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Amazon.Lambda.Core;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Stackage.Aws.Lambda.Abstractions;
+using Stackage.Aws.Lambda.Options;
 using Stackage.Aws.Lambda.Results;
 
 namespace Stackage.Aws.Lambda.Middleware
 {
    public class DeadlineCancellationMiddleware : ILambdaMiddleware
    {
-      private readonly IConfiguration _configuration;
       private readonly IDeadlineCancellationInitializer _deadlineCancellationInitializer;
+      private readonly DeadlineCancellationOptions _options;
       private readonly ILogger<DeadlineCancellationMiddleware> _logger;
 
       public DeadlineCancellationMiddleware(
-         IConfiguration configuration,
          IDeadlineCancellationInitializer deadlineCancellationInitializer,
+         IOptions<DeadlineCancellationOptions> options,
          ILogger<DeadlineCancellationMiddleware> logger)
       {
-         _configuration = configuration;
          _deadlineCancellationInitializer = deadlineCancellationInitializer;
+         _options = options.Value;
          _logger = logger;
       }
 
@@ -34,21 +34,50 @@ namespace Stackage.Aws.Lambda.Middleware
          PipelineDelegate next,
          CancellationToken cancellationToken)
       {
-         var effectiveRemainingTimeMs = GetEffectiveRemainingTimeMs(context);
+         // Pipeline if given softLimitMs to cancel, if it doesn't within that period the function has hardLimitMs to report an indeterminate error
+         var hardLimitMs = RemainingTimeLessInterval(context, _options.HardInterval);
+         var softLimitMs = RemainingTimeLessInterval(context, _options.HardInterval + _options.SoftInterval);
 
-         using var remainingTimeExpired = new CancellationTokenSource(effectiveRemainingTimeMs);
-         using var abortedOrExpired = CancellationTokenSource.CreateLinkedTokenSource(
-            cancellationToken, remainingTimeExpired.Token);
+         if (softLimitMs <= 0)
+         {
+            const string message = "The request was shortcut due to lack of remaining time; the handler was not started";
 
-         _deadlineCancellationInitializer.Initialize(abortedOrExpired.Token);
+            _logger.LogWarning(message);
+
+            return new CancellationResult(message);
+         }
+
+         using var softLimitExpired = new CancellationTokenSource(softLimitMs);
+         using var cancelledOrSoftLimitExpired = CancellationTokenSource.CreateLinkedTokenSource(
+            cancellationToken, softLimitExpired.Token);
+
+         _deadlineCancellationInitializer.Initialize(cancelledOrSoftLimitExpired.Token);
+
+         var nextTask = next(inputStream, context, requestServices, cancelledOrSoftLimitExpired.Token);
+         var hardLimitExpiredTask = Task.Delay(hardLimitMs, cancellationToken);
+
+         var completedTask = await Task.WhenAny(nextTask, hardLimitExpiredTask);
+
+         if (completedTask == hardLimitExpiredTask)
+         {
+            // Will bubble exception up to caller if task was cancelled
+            await hardLimitExpiredTask;
+
+            const string message = "The request was cancelled due to lack of remaining time but failed to respond; it may or may not have completed";
+
+            _logger.LogError(message);
+
+            return new CancellationResult(message);
+         }
 
          try
          {
-            return await next(inputStream, context, requestServices, abortedOrExpired.Token);
+            // Throw exception or return result
+            return await nextTask;
          }
-         catch (OperationCanceledException e) when (remainingTimeExpired.IsCancellationRequested)
+         catch (OperationCanceledException e) when (softLimitExpired.IsCancellationRequested)
          {
-            const string message = "The request was cancelled due to expiry of remaining time";
+            const string message = "The request was cancelled due to lack of remaining time and responded promptly; it may or may not have completed";
 
             _logger.LogWarning(e, message);
 
@@ -56,23 +85,9 @@ namespace Stackage.Aws.Lambda.Middleware
          }
       }
 
-      private int GetEffectiveRemainingTimeMs(ILambdaContext context)
+      private static int RemainingTimeLessInterval(ILambdaContext context, TimeSpan interval)
       {
-         return Math.Max((int) context.RemainingTime.Subtract(GetShutdownTimeout()).TotalMilliseconds, 0);
-      }
-
-      private TimeSpan GetShutdownTimeout()
-      {
-         const int defaultShutdownTimeoutMs = 5000;
-
-         var shutdownTimeoutMs = _configuration["ShutdownTimeoutMs"];
-
-         if (!string.IsNullOrEmpty(shutdownTimeoutMs) && int.TryParse(shutdownTimeoutMs, NumberStyles.None, CultureInfo.InvariantCulture, out var milliseconds))
-         {
-            return TimeSpan.FromMilliseconds(milliseconds);
-         }
-
-         return TimeSpan.FromMilliseconds(defaultShutdownTimeoutMs);
+         return Math.Max((int) context.RemainingTime.Subtract(interval).TotalMilliseconds, 0);
       }
    }
 }
