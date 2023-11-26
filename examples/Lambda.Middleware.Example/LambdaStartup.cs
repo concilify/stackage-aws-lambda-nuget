@@ -18,7 +18,7 @@ namespace Lambda.Middleware.Example
 
       public void ConfigureServices(IServiceCollection services)
       {
-         services.AddDeadlineCancellation();
+         services.AddDeadlineCancellation(_configuration);
 
          // TODO: Create correlationId type service
       }
