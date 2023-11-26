@@ -16,6 +16,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{78305536-CCBA-4321-A43F-6064B88007BA}"
 	ProjectSection(SolutionItems) = preProject
 		examples\Dockerfile = examples\Dockerfile
+		examples\.dockerignore = examples\.dockerignore
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lambda.Basic.Example", "examples\Lambda.Basic.Example\Lambda.Basic.Example.csproj", "{87D966AC-94E8-4946-82DD-8F9215011CC4}"
