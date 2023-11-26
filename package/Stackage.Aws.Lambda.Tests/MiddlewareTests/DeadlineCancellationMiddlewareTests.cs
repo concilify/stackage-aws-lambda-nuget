@@ -62,7 +62,7 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
             Stream inputStream,
             ILambdaContext context,
             IServiceProvider requestServices,
-            CancellationToken cancellationToken)
+            CancellationToken requestAborted)
          {
             await Task.Delay(TimeSpan.FromHours(1), deadlineCancellation.Token);
 
@@ -90,11 +90,11 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
          var cancellationTokenSource = new CancellationTokenSource();
 
          var pipelineDelegate = PipelineDelegateFake.Callback(
-            (_, _, _, cancellationToken) =>
+            (_, _, _, requestAborted) =>
             {
-               Assert.That(cancellationToken.IsCancellationRequested, Is.False);
+               Assert.That(requestAborted.IsCancellationRequested, Is.False);
                cancellationTokenSource.Cancel();
-               Assert.That(cancellationToken.IsCancellationRequested, Is.True);
+               Assert.That(requestAborted.IsCancellationRequested, Is.True);
             });
 
          var deadlineCancellation = new DeadlineCancellation();
@@ -119,13 +119,13 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
          var cancellationTokenSource = new CancellationTokenSource();
 
          var pipelineDelegate = PipelineDelegateFake.AsyncCallback(
-            async (_, _, _, cancellationToken) =>
+            async (_, _, _, requestAborted) =>
             {
-               Assert.That(cancellationToken.IsCancellationRequested, Is.False);
+               Assert.That(requestAborted.IsCancellationRequested, Is.False);
 
-               await Task.Delay(10000, cancellationToken);
+               await Task.Delay(10000, requestAborted);
 
-               Assert.That(cancellationToken.IsCancellationRequested, Is.True);
+               Assert.That(requestAborted.IsCancellationRequested, Is.True);
             });
 
          var configuration = ConfigurationFake.WithShutdownTimeoutMs(0);

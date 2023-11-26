@@ -41,11 +41,11 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
          var cancellationTokenSource = new CancellationTokenSource();
 
          var pipelineDelegate = PipelineDelegateFake.Callback(
-            (_, _, _, cancellationToken) =>
+            (_, _, _, requestAborted) =>
             {
-               Assert.That(cancellationToken.IsCancellationRequested, Is.False);
+               Assert.That(requestAborted.IsCancellationRequested, Is.False);
                cancellationTokenSource.Cancel();
-               Assert.That(cancellationToken.IsCancellationRequested, Is.True);
+               Assert.That(requestAborted.IsCancellationRequested, Is.True);
             });
 
          var middleware = CreateMiddleware();
