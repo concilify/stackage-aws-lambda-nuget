@@ -10,5 +10,5 @@ namespace Stackage.Aws.Lambda.Abstractions
       Stream inputStream,
       ILambdaContext context,
       IServiceProvider requestServices,
-      CancellationToken requestAborted = default);
+      CancellationToken requestAborted);
 }

@@ -12,7 +12,7 @@ namespace Stackage.Aws.Lambda.Extensions
       {
          return pipelineBuilder.Use(next =>
          {
-            return (inputStream, context, requestServices, cancellationToken) =>
+            return (inputStream, context, requestServices, requestAborted) =>
             {
                var middleware = ActivatorUtilities.CreateInstance<TMiddleware>(requestServices);
 
@@ -21,7 +21,7 @@ namespace Stackage.Aws.Lambda.Extensions
                   throw new InvalidOperationException($"Failed to create instance of middleware type {typeof(TMiddleware).Name}");
                }
 
-               return middleware.InvokeAsync(inputStream, context, requestServices, next, cancellationToken);
+               return middleware.InvokeAsync(inputStream, context, requestServices, next, requestAborted);
             };
          });
       }

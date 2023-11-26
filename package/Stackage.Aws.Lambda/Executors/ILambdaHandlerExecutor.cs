@@ -11,5 +11,5 @@ internal interface ILambdaHandlerExecutor
    Task<ILambdaResult> ExecuteAsync(
       Stream inputStream,
       ILambdaContext context,
-      CancellationToken requestAborted = default);
+      CancellationToken requestAborted);
 }
