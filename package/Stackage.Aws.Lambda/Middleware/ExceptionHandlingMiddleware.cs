@@ -23,13 +23,13 @@ namespace Stackage.Aws.Lambda.Middleware
          ILambdaContext context,
          IServiceProvider requestServices,
          PipelineDelegate next,
-         CancellationToken cancellationToken)
+         CancellationToken requestAborted)
       {
          try
          {
-            return await next(inputStream, context, requestServices, cancellationToken);
+            return await next(inputStream, context, requestServices, requestAborted);
          }
-         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+         catch (OperationCanceledException) when (requestAborted.IsCancellationRequested)
          {
             throw;
          }

@@ -17,11 +17,11 @@ public class LambdaPipelineBuilderTests
       var pipelineAsync = builder.Build();
 
       var handlerExecutor = LambdaHandlerExecutorFake.ExecuteCallback(
-         (_, _, cancellationToken) =>
+         (_, _, requestAborted) =>
          {
-            Assert.That(cancellationToken.IsCancellationRequested, Is.False);
+            Assert.That(requestAborted.IsCancellationRequested, Is.False);
             cancellationTokenSource.Cancel();
-            Assert.That(cancellationToken.IsCancellationRequested, Is.True);
+            Assert.That(requestAborted.IsCancellationRequested, Is.True);
          });
 
       await pipelineAsync(

@@ -32,13 +32,13 @@ namespace Stackage.Aws.Lambda.Middleware
          ILambdaContext context,
          IServiceProvider requestServices,
          PipelineDelegate next,
-         CancellationToken cancellationToken)
+         CancellationToken requestAborted)
       {
          var effectiveRemainingTimeMs = GetEffectiveRemainingTimeMs(context);
 
          using var remainingTimeExpired = new CancellationTokenSource(effectiveRemainingTimeMs);
          using var abortedOrExpired = CancellationTokenSource.CreateLinkedTokenSource(
-            cancellationToken, remainingTimeExpired.Token);
+            requestAborted, remainingTimeExpired.Token);
 
          _deadlineCancellationInitializer.Initialize(abortedOrExpired.Token);
 

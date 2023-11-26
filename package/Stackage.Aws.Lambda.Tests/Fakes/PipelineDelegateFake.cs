@@ -19,9 +19,9 @@ public static class PipelineDelegateFake
 
    public static PipelineDelegate Callback(Action<Stream, ILambdaContext, IServiceProvider, CancellationToken> callback)
    {
-      return (stream, context, serviceProvider, cancellationToken) =>
+      return (stream, context, serviceProvider, requestAborted) =>
       {
-         callback(stream, context, serviceProvider, cancellationToken);
+         callback(stream, context, serviceProvider, requestAborted);
 
          return Task.FromResult<ILambdaResult>(new StringResult("ValidResult"));
       };
@@ -29,9 +29,9 @@ public static class PipelineDelegateFake
 
    public static PipelineDelegate AsyncCallback(Func<Stream, ILambdaContext, IServiceProvider, CancellationToken, Task> callback)
    {
-      return async (stream, context, serviceProvider, cancellationToken) =>
+      return async (stream, context, serviceProvider, requestAborted) =>
       {
-         await callback(stream, context, serviceProvider, cancellationToken);
+         await callback(stream, context, serviceProvider, requestAborted);
 
          return new StringResult("ValidResult");
       };
