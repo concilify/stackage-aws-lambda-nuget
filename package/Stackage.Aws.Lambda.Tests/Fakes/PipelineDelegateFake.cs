@@ -79,7 +79,7 @@ public static class PipelineDelegateFake
             {
                await Task.Delay(10000, requestAborted);
             }
-            catch (Exception e)
+            catch (Exception)
             {
                Assert.That(requestAborted.IsCancellationRequested, Is.True);
                throw;
