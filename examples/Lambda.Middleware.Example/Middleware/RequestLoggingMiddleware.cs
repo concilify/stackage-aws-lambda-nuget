@@ -23,11 +23,11 @@ namespace Lambda.Middleware.Example.Middleware
          ILambdaContext context,
          IServiceProvider requestServices,
          PipelineDelegate next,
-         CancellationToken cancellationToken)
+         CancellationToken requestAborted)
       {
          var timer = Stopwatch.StartNew();
 
-         var lambdaResult = await next(inputStream, context, requestServices, cancellationToken);
+         var lambdaResult = await next(inputStream, context, requestServices, requestAborted);
 
          _logger.LogInformation(
             "Request returned {lambdaResultType} in {durationMs}ms",

@@ -15,11 +15,11 @@ public static class PipelineDelegateFake
 
    public static PipelineDelegate Returns(ILambdaResult lambdaResult, int? latencyMs = null)
    {
-      return async (_, _, _, cancellationToken) =>
+      return async (_, _, _, requestAborted) =>
       {
          if (latencyMs != null)
          {
-            await Task.Delay(latencyMs.Value, cancellationToken);
+            await Task.Delay(latencyMs.Value, requestAborted);
          }
 
          return lambdaResult;
@@ -41,6 +41,23 @@ public static class PipelineDelegateFake
       return  (_, _, _, _) => throw exception ?? new Exception();
    }
 
+   public static PipelineDelegate ThrowsAfterCancellation(Exception exception)
+   {
+      return async (_, _, _, requestAborted) =>
+      {
+         try
+         {
+            await Task.Delay(10000, requestAborted);
+         }
+         catch (Exception)
+         {
+            throw exception;
+         }
+
+         throw new NotSupportedException("Shouldn't get here");
+      };
+   }
+
    public static PipelineDelegate Callback(Action<Stream, ILambdaContext, IServiceProvider, CancellationToken> callback)
    {
       return (stream, context, serviceProvider, cancellationToken) =>
@@ -51,17 +68,28 @@ public static class PipelineDelegateFake
       };
    }
 
-   public static PipelineDelegate Callback(Func<Stream, ILambdaContext, IServiceProvider, CancellationToken, ILambdaResult> callback)
+   public static PipelineDelegate LongRunningAndExpectsToBeCancelled()
    {
-      return (stream, context, serviceProvider, cancellationToken) =>
-      {
-         var result = callback(stream, context, serviceProvider, cancellationToken);
+      return AsyncCallback(
+         async (_, _, _, requestAborted) =>
+         {
+            Assert.That(requestAborted.IsCancellationRequested, Is.False);
 
-         return Task.FromResult(result);
-      };
+            try
+            {
+               await Task.Delay(10000, requestAborted);
+            }
+            catch (Exception e)
+            {
+               Assert.That(requestAborted.IsCancellationRequested, Is.True);
+               throw;
+            }
+
+            throw new NotSupportedException("Shouldn't get here");
+         });
    }
 
-   public static PipelineDelegate AsyncCallback(Func<Stream, ILambdaContext, IServiceProvider, CancellationToken, Task> callback)
+   private static PipelineDelegate AsyncCallback(Func<Stream, ILambdaContext, IServiceProvider, CancellationToken, Task> callback)
    {
       return async (stream, context, serviceProvider, cancellationToken) =>
       {
@@ -69,31 +97,5 @@ public static class PipelineDelegateFake
 
          return new StringResult("ValidResult");
       };
-   }
-
-   public static PipelineDelegate LongRunningAndExpectsToBeCancelled()
-   {
-      return AsyncCallback(
-         async (_, _, _, cancellationToken) =>
-         {
-            Assert.That(cancellationToken.IsCancellationRequested, Is.False);
-
-            await Task.Delay(10000, cancellationToken);
-
-            Assert.That(cancellationToken.IsCancellationRequested, Is.True);
-         });
-   }
-
-   public static PipelineDelegate LongRunningAndDoesNotExpectToBeCancelled()
-   {
-      return AsyncCallback(
-         async (_, _, _, cancellationToken) =>
-         {
-            Assert.That(cancellationToken.IsCancellationRequested, Is.False);
-
-            await Task.Delay(10000, cancellationToken);
-
-            Assert.That(cancellationToken.IsCancellationRequested, Is.False);
-         });
    }
 }

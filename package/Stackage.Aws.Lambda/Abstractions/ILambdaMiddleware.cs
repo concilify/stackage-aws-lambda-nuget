@@ -13,6 +13,6 @@ namespace Stackage.Aws.Lambda.Abstractions
          ILambdaContext context,
          IServiceProvider requestServices,
          PipelineDelegate next,
-         CancellationToken cancellationToken);
+         CancellationToken requestAborted);
    }
 }

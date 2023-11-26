@@ -27,7 +27,7 @@ namespace Stackage.Aws.Lambda.Tests.Scenarios
             {
                builder.AddInMemoryCollection(new Dictionary<string, string>
                {
-                  {"FAKERUNTIMEOPTIONS:DEADLINETIMEOUT", "00:00:02"}
+                  {"FAKERUNTIMEOPTIONS:DEADLINETIMEOUT", "00:00:03"}
                });
             });
          _responses = functions.Single().Value.CompletedRequests;

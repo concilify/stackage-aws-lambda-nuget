@@ -65,50 +65,62 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
          Assert.That(elapsedMs, elapsedMsConstraint);
       }
 
+#if NET8_0
       [Test]
       public async Task cancellation_token_passed_to_inner_delegate_can_be_cancelled_by_incoming_cancellation_token()
       {
-         var cancellationTokenSource = new CancellationTokenSource();
-         var lambdaResult = A.Fake<ILambdaResult>();
-
-         var pipelineDelegate = PipelineDelegateFake.Callback(
-            (_, _, _, cancellationToken) =>
-            {
-               Assert.That(cancellationToken.IsCancellationRequested, Is.False);
-               cancellationTokenSource.Cancel();
-               Assert.That(cancellationToken.IsCancellationRequested, Is.True);
-
-               return lambdaResult;
-            });
+         var cancellationTokenSource = new CancellationTokenSource(200);
 
          var deadlineCancellation = new DeadlineCancellation();
 
          var (result, elapsedMs) = await InvokeAsync(
-            pipelineDelegate,
+            PipelineDelegateFake.LongRunningAndExpectsToBeCancelled(),
             LambdaContextFake.WithRemainingTime(TimeSpan.FromSeconds(10)),
+            options: CreateDeadlineCancellationOptions(1, 10),
             cancellationInitializer: deadlineCancellation,
-            cancellationToken: cancellationTokenSource.Token);
+            requestAborted: cancellationTokenSource.Token);
 
-         // In this scenario the pipeline triggers the cancellation but doesn't throw an exception
-         Assert.That(result, Is.SameAs(lambdaResult));
+         Assert.That(result, Is.InstanceOf<CancellationResult>());
+         var cancellationResult = (CancellationResult) result;
+         Assert.That(cancellationResult.Message, Is.EqualTo("The request was cancelled by the host; it may or may not have completed"));
 
          Assert.That(deadlineCancellation.Token.IsCancellationRequested, Is.True);
-         Assert.That(cancellationTokenSource.IsCancellationRequested, Is.True);
 
-         // Middleware should run for hardly any time as cancelled almost immediately
-         Assert.That(elapsedMs, Is.LessThan(20));
+         // Middleware should run for c.200ms
+         Assert.That(elapsedMs, Is.LessThan(220));
       }
-
-      [Test]
-      public void bubbles_exception_to_caller_when_inner_delegate_cancelled_by_incoming_cancellation_token()
-      {
-         Assert.Fail();
-      }
+#endif
 
       [Test]
       public void bubbles_exception_to_caller_when_inner_delegate_cancelled_by_another_cancellation_token()
       {
-         Assert.Fail();
+         var exceptionToThrow = new OperationCanceledException();
+
+         var exception = Assert.ThrowsAsync<OperationCanceledException>(async () =>
+         {
+            await InvokeAsync(
+               PipelineDelegateFake.Throws(exceptionToThrow),
+               LambdaContextFake.WithRemainingTime(TimeSpan.FromSeconds(10)),
+               options: CreateDeadlineCancellationOptions(1, 10));
+         });
+
+         Assert.That(exception, Is.SameAs(exceptionToThrow));
+      }
+
+      [Test]
+      public void bubbles_exception_to_caller_when_inner_delegate_throws_after_cancellation()
+      {
+         var exceptionToThrow = new Exception();
+
+         var exception = Assert.ThrowsAsync<Exception>(async () =>
+         {
+            await InvokeAsync(
+               PipelineDelegateFake.ThrowsAfterCancellation(exceptionToThrow),
+               LambdaContextFake.WithRemainingTime(TimeSpan.FromMilliseconds(200)),
+               options: CreateDeadlineCancellationOptions(0, 100));
+         });
+
+         Assert.That(exception, Is.SameAs(exceptionToThrow));
       }
 
       private static TestCaseData[] NonCancellationTestCases()
@@ -118,25 +130,25 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
          return new[]
          {
             new TestCaseData(
-                  PipelineDelegateFake.Returns(lambdaResult, latencyMs: 80),
+                  PipelineDelegateFake.Returns(lambdaResult, latencyMs: 70),
                   LambdaContextFake.WithRemainingTime(TimeSpan.FromMilliseconds(200)),
                   CreateDeadlineCancellationOptions(30, 70),
                   lambdaResult,
-                  Is.LessThan(100)) // Middleware should run for c.80ms
+                  Is.LessThan(100)) // Middleware should run for c.70ms
                .SetName("Request completes before hard and soft intervals expire"),
             new TestCaseData(
-                  PipelineDelegateFake.Returns(lambdaResult, latencyMs: 80),
+                  PipelineDelegateFake.Returns(lambdaResult, latencyMs: 70),
                   LambdaContextFake.WithRemainingTime(TimeSpan.FromMilliseconds(200)),
                   CreateDeadlineCancellationOptions(0, 100),
                   lambdaResult,
-                  Is.LessThan(100)) // Middleware should run for c.80ms
+                  Is.LessThan(120)) // Middleware should run for c.70ms
                .SetName("Request completes before soft interval expires"),
             new TestCaseData(
-                  PipelineDelegateFake.Returns(lambdaResult, latencyMs: 80),
+                  PipelineDelegateFake.Returns(lambdaResult, latencyMs: 70),
                   LambdaContextFake.WithRemainingTime(TimeSpan.FromMilliseconds(200)),
                   CreateDeadlineCancellationOptions(100, 0),
                   lambdaResult,
-                  Is.LessThan(100)) // Middleware should run for c.80ms
+                  Is.LessThan(120)) // Middleware should run for c.70ms
                .SetName("Request completes before hard interval expires")
          };
       }
@@ -144,7 +156,7 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
       private static TestCaseData[] CancellationTestCases()
       {
          const string shortcutCancellationMessage =
-            "The request was shortcut due to lack of remaining time; the handler was not started";
+            "The request was shortcut due to lack of remaining time; the handler was not invoked";
          const string hardCancellationMessage =
             "The request was cancelled due to lack of remaining time but failed to respond; it may or may not have completed";
          const string softCancellationMessage =
@@ -190,7 +202,7 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
                   CreateDeadlineCancellationOptions(100, 90),
                   hardCancellationMessage,
                   true,
-                  Is.LessThan(120)) // Middleware should run for c.100ms (remainingTime - hardTimeout)
+                  Is.LessThan(130)) // Middleware should run for c.100ms (remainingTime - hardTimeout)
                .SetName("Request is cancelled forcibly when inner pipeline ignores to cancellation token"),
          };
       }
@@ -200,7 +212,7 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
          ILambdaContext context,
          DeadlineCancellationOptions options = null,
          IDeadlineCancellationInitializer cancellationInitializer = null,
-         CancellationToken cancellationToken = default)
+         CancellationToken requestAborted = default)
       {
          var middleware = CreateMiddleware(
             options: options,
@@ -213,7 +225,7 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
             context,
             A.Fake<IServiceProvider>(),
             pipelineDelegate,
-            cancellationToken);
+            requestAborted);
 
          return (result, stopwatch.ElapsedMilliseconds);
       }

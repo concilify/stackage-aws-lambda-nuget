@@ -32,62 +32,81 @@ namespace Stackage.Aws.Lambda.Middleware
          ILambdaContext context,
          IServiceProvider requestServices,
          PipelineDelegate next,
-         CancellationToken cancellationToken)
+         CancellationToken requestAborted)
       {
-         // Pipeline if given softLimitMs to cancel, if it doesn't within that period the function has hardLimitMs to report an indeterminate error
-         var hardLimitMs = RemainingTimeLessInterval(context, _options.HardInterval);
-         var softLimitMs = RemainingTimeLessInterval(context, _options.HardInterval + _options.SoftInterval);
+         // Pipeline is given context.RemainingTime less HardInterval and SoftInterval to complete
+         // Cancellation is triggered if it hasn't completed, giving it SoftInterval to cancel
+         // The middleware intervenes if it hasn't cancelled, giving HardInterval for the caller to reply to the lambda runtime
 
-         if (softLimitMs <= 0)
+         var timeBeforeHardLimitMs = RemainingTimeLessInterval(context, _options.HardInterval);
+         var timeBeforeCancellationMs = RemainingTimeLessInterval(context, _options.HardInterval + _options.SoftInterval);
+
+         if (timeBeforeCancellationMs <= 0)
          {
-            const string message = "The request was shortcut due to lack of remaining time; the handler was not started";
-
-            _logger.LogWarning(message);
-
-            return new CancellationResult(message);
+            return ShortcutCancellationResult();
          }
 
-         using var softLimitExpired = new CancellationTokenSource(softLimitMs);
-         using var cancelledOrSoftLimitExpired = CancellationTokenSource.CreateLinkedTokenSource(
-            cancellationToken, softLimitExpired.Token);
+         using var remainingTimeExpired = new CancellationTokenSource(timeBeforeCancellationMs);
+         using var remainingTimeExpiredOrRequestAborted = CancellationTokenSource.CreateLinkedTokenSource(
+            remainingTimeExpired.Token, requestAborted);
 
-         _deadlineCancellationInitializer.Initialize(cancelledOrSoftLimitExpired.Token);
+         _deadlineCancellationInitializer.Initialize(remainingTimeExpiredOrRequestAborted.Token);
 
-         var nextTask = next(inputStream, context, requestServices, cancelledOrSoftLimitExpired.Token);
-         var hardLimitExpiredTask = Task.Delay(hardLimitMs, cancellationToken);
+         var nextTask = next(inputStream, context, requestServices, remainingTimeExpiredOrRequestAborted.Token);
+         var hardLimitExpiredTask = Task.Delay(timeBeforeHardLimitMs, requestAborted);
 
          var completedTask = await Task.WhenAny(nextTask, hardLimitExpiredTask);
 
          if (completedTask == hardLimitExpiredTask)
          {
-            // Will bubble exception up to caller if task was cancelled
-            await hardLimitExpiredTask;
+            try
+            {
+               await hardLimitExpiredTask;
 
-            const string message = "The request was cancelled due to lack of remaining time but failed to respond; it may or may not have completed";
-
-            _logger.LogError(message);
-
-            return new CancellationResult(message);
+               return HardLimitCancellationResult();
+            }
+            catch (OperationCanceledException e) when (requestAborted.IsCancellationRequested)
+            {
+               return CancelledByHostCancellationResult(e);
+            }
          }
 
          try
          {
-            // Throw exception or return result
             return await nextTask;
          }
-         catch (OperationCanceledException e) when (softLimitExpired.IsCancellationRequested)
+         catch (OperationCanceledException e) when (remainingTimeExpired.IsCancellationRequested)
          {
-            const string message = "The request was cancelled due to lack of remaining time and responded promptly; it may or may not have completed";
-
-            _logger.LogWarning(e, message);
-
-            return new CancellationResult(message);
+            return RemainingTimeExpiredCancellationResult(e);
+         }
+         catch (OperationCanceledException e) when (requestAborted.IsCancellationRequested)
+         {
+            return CancelledByHostCancellationResult(e);
          }
       }
 
       private static int RemainingTimeLessInterval(ILambdaContext context, TimeSpan interval)
       {
          return Math.Max((int) context.RemainingTime.Subtract(interval).TotalMilliseconds, 0);
+      }
+
+      private CancellationResult ShortcutCancellationResult()
+         => CreateCancellationResult("The request was shortcut due to lack of remaining time; the handler was not invoked");
+
+      private CancellationResult RemainingTimeExpiredCancellationResult(Exception exception)
+         => CreateCancellationResult("The request was cancelled due to lack of remaining time and responded promptly; it may or may not have completed", exception);
+
+      private CancellationResult HardLimitCancellationResult()
+         => CreateCancellationResult("The request was cancelled due to lack of remaining time but failed to respond; it may or may not have completed");
+
+      private CancellationResult CancelledByHostCancellationResult(Exception exception)
+         => CreateCancellationResult("The request was cancelled by the host; it may or may not have completed", exception);
+
+      private CancellationResult CreateCancellationResult(string message, Exception? exception = null)
+      {
+         _logger.LogError(exception, message);
+
+         return new CancellationResult(message);
       }
    }
 }
