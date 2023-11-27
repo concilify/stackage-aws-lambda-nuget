@@ -27,7 +27,6 @@ namespace Lambda.Middleware.Example
       {
          // Middleware runs in the order listed here
          pipelineBuilder.Use<RequestLoggingMiddleware>();
-         pipelineBuilder.Use<ExceptionHandlingMiddleware>();
          pipelineBuilder.Use<DeadlineCancellationMiddleware>();
       }
    }
