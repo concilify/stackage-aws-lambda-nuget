@@ -6,7 +6,7 @@ using Stackage.Aws.Lambda.Tests.Handlers;
 
 namespace Stackage.Aws.Lambda.Tests.Scenarios
 {
-   public class happy_stream_handler_with_exception_middleware
+   public class throwing_stream_handler
    {
       private LambdaCompletion.Dictionary _responses;
 
@@ -18,8 +18,7 @@ namespace Stackage.Aws.Lambda.Tests.Scenarios
             new LambdaRequest("req-id", "AnyString"),
             configureLambdaListener: builder =>
             {
-               builder.UseStartup<StartupWithExceptionHandling>();
-               builder.UseHandler<DecorateStreamLambdaHandler>();
+               builder.UseHandler<ThrowingStreamLambdaHandler>();
             });
          _responses = functions.Single().Value.CompletedRequests;
       }
@@ -33,7 +32,10 @@ namespace Stackage.Aws.Lambda.Tests.Scenarios
       [Test]
       public void handler_received_request_and_returned_response()
       {
-         Assert.That(_responses.Values.Single().ResponseBody, Is.EqualTo("[AnyString]"));
+         var responseBody = _responses.Values.Single().ResponseBody;
+
+         Assert.That(responseBody, Contains.Substring("\"errorType\": \"Exception\""));
+         Assert.That(responseBody, Contains.Substring("\"errorMessage\": \"ThrowingStreamLambdaHandler failed\""));
       }
    }
 }
