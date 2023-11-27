@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Amazon.Lambda.Core;
 using FakeItEasy;
-using Microsoft.Extensions.Logging.Abstractions;
 using NUnit.Framework;
 using Stackage.Aws.Lambda.Abstractions;
 using Stackage.Aws.Lambda.Results;
@@ -104,48 +103,6 @@ public class LambdaListenerTests
          .MustHaveHappenedOnceExactly();
    }
 
-   [Test]
-   public async Task invokes_execute_of_cancellation_result_when_pipeline_is_cancelled_for_given_token()
-   {
-      var cancellationTokenSource = new CancellationTokenSource(0);
-      var exceptionToThrow = new OperationCanceledException();
-      var lambdaResultExecutor = A.Fake<ILambdaResultExecutor<CancellationResult>>();
-
-      var context = LambdaContextFake.Valid();
-      var pipelineAsync = PipelineDelegateFake.Throws(exceptionToThrow);
-
-      var lambdaListener = CreateLambdaListener(
-         serviceProvider: ServiceProviderFake.Returns(lambdaResultExecutor),
-         pipelineAsync: pipelineAsync);
-
-      await lambdaListener.InvokeAndReplyAsync(new LambdaInvocation(new MemoryStream(), context), cancellationTokenSource.Token);
-
-      A.CallTo(() => lambdaResultExecutor.ExecuteAsync(context, A<CancellationResult>._))
-         .MustHaveHappenedOnceExactly();
-   }
-
-   [Test]
-   public async Task invokes_execute_of_exception_result_when_pipeline_is_cancelled_for_another_token()
-   {
-      var cancellationTokenSource = new CancellationTokenSource(10000);
-      var exceptionToThrow = new OperationCanceledException();
-      var lambdaResultExecutor = A.Fake<ILambdaResultExecutor<ExceptionResult>>();
-
-      var context = LambdaContextFake.Valid();
-      var pipelineAsync = PipelineDelegateFake.Throws(exceptionToThrow);
-
-      var lambdaListener = CreateLambdaListener(
-         serviceProvider: ServiceProviderFake.Returns(lambdaResultExecutor),
-         pipelineAsync: pipelineAsync);
-
-      await lambdaListener.InvokeAndReplyAsync(new LambdaInvocation(new MemoryStream(), context), cancellationTokenSource.Token);
-
-      A.CallTo(() => lambdaResultExecutor.ExecuteAsync(
-            context,
-            A<ExceptionResult>.That.Matches(r => r.Exception == exceptionToThrow)))
-         .MustHaveHappenedOnceExactly();
-   }
-
    private static LambdaListener CreateLambdaListener(
       ILambdaRuntime lambdaRuntime = null,
       IServiceProvider serviceProvider = null,
@@ -158,7 +115,6 @@ public class LambdaListenerTests
       return new LambdaListener(
          lambdaRuntime,
          serviceProvider,
-         pipelineAsync,
-         NullLogger<LambdaListener>.Instance);
+         pipelineAsync);
    }
 }

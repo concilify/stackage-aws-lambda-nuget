@@ -1,20 +1,20 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Stackage.Aws.Lambda.Abstractions;
 using Stackage.Aws.Lambda.Executors;
+using Stackage.Aws.Lambda.Extensions;
+using Stackage.Aws.Lambda.Middleware;
 
 namespace Stackage.Aws.Lambda
 {
    public class LambdaPipelineBuilder : ILambdaPipelineBuilder
    {
-      private readonly IList<Func<PipelineDelegate, PipelineDelegate>> _components =
-         new List<Func<PipelineDelegate, PipelineDelegate>>();
+      private readonly List<Func<PipelineDelegate, PipelineDelegate>> _middlewares = new();
 
       public ILambdaPipelineBuilder Use(Func<PipelineDelegate, PipelineDelegate> middleware)
       {
-         _components.Add(middleware);
+         _middlewares.Add(middleware);
 
          return this;
       }
@@ -33,12 +33,14 @@ namespace Stackage.Aws.Lambda
             return handlerExecutor.ExecuteAsync(inputStream, context, requestAborted);
          };
 
-         foreach (var component in _components.Reverse())
+         for (var i = _middlewares.Count - 1; i >= 0; i--)
          {
-            pipeline = component(pipeline);
+            pipeline = _middlewares[i](pipeline);
          }
 
-         return pipeline;
+         var invocationMiddlewareFunc = MiddlewareExtensions.Resolve<InvocationMiddleware>();
+
+         return invocationMiddlewareFunc(pipeline);
       }
    }
 }

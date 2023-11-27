@@ -14,7 +14,7 @@ using Stackage.Aws.Lambda.Tests.Fakes;
 
 namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
 {
-   public class ExceptionHandlingMiddlewareTests
+   public class InvocationMiddlewareTests
    {
       [Test]
       public async Task returns_result_from_inner_delegate()
@@ -80,7 +80,7 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
       }
 
       [Test]
-      public void bubbles_exception_when_inner_delegate_throws_cancellation_exception_for_given_token()
+      public async Task returns_cancellation_result_when_inner_delegate_throws_cancellation_exception_for_given_token()
       {
          var cancellationTokenSource = new CancellationTokenSource(0);
          var exceptionToThrow = new OperationCanceledException();
@@ -89,17 +89,16 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
 
          var pipelineDelegate = PipelineDelegateFake.Throws(exceptionToThrow);
 
-         var exception = Assert.ThrowsAsync<OperationCanceledException>(async () =>
-         {
-            await middleware.InvokeAsync(
-               new MemoryStream(),
-               A.Fake<ILambdaContext>(),
-               A.Fake<IServiceProvider>(),
-               pipelineDelegate,
-               cancellationTokenSource.Token);
-         });
+         var result = await middleware.InvokeAsync(
+            new MemoryStream(),
+            A.Fake<ILambdaContext>(),
+            A.Fake<IServiceProvider>(),
+            pipelineDelegate,
+            cancellationTokenSource.Token);
 
-         Assert.That(exception, Is.SameAs(exceptionToThrow));
+         Assert.That(result, Is.InstanceOf<CancellationResult>());
+         var cancellationResult = (CancellationResult)result;
+         Assert.That(cancellationResult.Message, Is.EqualTo("The request was cancelled by the host; the handler may or may not have completed"));
       }
 
       [Test]
@@ -124,12 +123,12 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
          Assert.That(exceptionResult.Exception, Is.SameAs(exceptionToThrow));
       }
 
-      private static ExceptionHandlingMiddleware CreateMiddleware(
-         ILogger<ExceptionHandlingMiddleware> logger = null)
+      private static InvocationMiddleware CreateMiddleware(
+         ILogger<InvocationMiddleware> logger = null)
       {
-         logger ??= NullLogger<ExceptionHandlingMiddleware>.Instance;
+         logger ??= NullLogger<InvocationMiddleware>.Instance;
 
-         return new ExceptionHandlingMiddleware(logger);
+         return new InvocationMiddleware(logger);
       }
    }
 }

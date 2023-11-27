@@ -1,12 +1,14 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 using NUnit.Framework;
 using Stackage.Aws.Lambda.FakeRuntime.Model;
 using Stackage.Aws.Lambda.Tests.Handlers;
 
 namespace Stackage.Aws.Lambda.Tests.Scenarios
 {
-   public class throwing_stream_handler_with_exception_middleware
+   public class long_running_stream_handler_with_deadline_cancellation_middleware
    {
       private LambdaCompletion.Dictionary _responses;
 
@@ -18,8 +20,15 @@ namespace Stackage.Aws.Lambda.Tests.Scenarios
             new LambdaRequest("req-id", "AnyString"),
             configureLambdaListener: builder =>
             {
-               builder.UseStartup<StartupWithExceptionHandling>();
-               builder.UseHandler<ThrowingStreamLambdaHandler>();
+               builder.UseStartup<StartupWithDeadlineCancellation>();
+               builder.UseHandler<LongRunningStreamLambdaHandler>();
+            },
+            configureConfiguration: builder =>
+            {
+               builder.AddInMemoryCollection(new Dictionary<string, string>
+               {
+                  {"FAKERUNTIMEOPTIONS:DEADLINETIMEOUT", "00:00:03"}
+               });
             });
          _responses = functions.Single().Value.CompletedRequests;
       }
@@ -35,8 +44,8 @@ namespace Stackage.Aws.Lambda.Tests.Scenarios
       {
          var responseBody = _responses.Values.Single().ResponseBody;
 
-         Assert.That(responseBody, Contains.Substring("\"errorType\": \"Exception\""));
-         Assert.That(responseBody, Contains.Substring("\"errorMessage\": \"ThrowingStreamLambdaHandler failed\""));
+         Assert.That(responseBody, Contains.Substring("\"errorType\": \"TaskCanceledException\""));
+         Assert.That(responseBody, Contains.Substring("\"errorMessage\": \"The request was cancelled due to lack of remaining time; the handler responded promptly but may not have completed\""));
       }
    }
 }

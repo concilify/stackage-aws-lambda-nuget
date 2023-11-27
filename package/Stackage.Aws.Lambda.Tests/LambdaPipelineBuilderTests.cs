@@ -1,7 +1,10 @@
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using NUnit.Framework;
+using Stackage.Aws.Lambda.Middleware;
 using Stackage.Aws.Lambda.Tests.Fakes;
 
 namespace Stackage.Aws.Lambda.Tests;
@@ -27,7 +30,9 @@ public class LambdaPipelineBuilderTests
       await pipelineAsync(
          new MemoryStream(),
          LambdaContextFake.Valid(),
-         ServiceProviderFake.Returns(handlerExecutor),
+         ServiceProviderFake.Returns(
+            handlerExecutor,
+            (ILogger<InvocationMiddleware>)NullLogger<InvocationMiddleware>.Instance),
          cancellationTokenSource.Token);
    }
 }
