@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Amazon.Lambda.Core;
 using FakeItEasy;
-using Microsoft.Extensions.Logging.Abstractions;
 using NUnit.Framework;
 using Stackage.Aws.Lambda.Abstractions;
 using Stackage.Aws.Lambda.Results;
