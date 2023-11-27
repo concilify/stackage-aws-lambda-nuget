@@ -59,16 +59,9 @@ namespace Stackage.Aws.Lambda.Middleware
 
          if (completedTask == hardLimitExpiredTask)
          {
-            try
-            {
-               await hardLimitExpiredTask;
+            await hardLimitExpiredTask;
 
-               return HardLimitCancellationResult();
-            }
-            catch (OperationCanceledException e) when (requestAborted.IsCancellationRequested)
-            {
-               return CancelledByHostCancellationResult(e);
-            }
+            return HardLimitCancellationResult();
          }
 
          try
@@ -78,10 +71,6 @@ namespace Stackage.Aws.Lambda.Middleware
          catch (OperationCanceledException e) when (remainingTimeExpired.IsCancellationRequested)
          {
             return RemainingTimeExpiredCancellationResult(e);
-         }
-         catch (OperationCanceledException e) when (requestAborted.IsCancellationRequested)
-         {
-            return CancelledByHostCancellationResult(e);
          }
       }
 
@@ -94,13 +83,10 @@ namespace Stackage.Aws.Lambda.Middleware
          => CreateCancellationResult("The request was shortcut due to lack of remaining time; the handler was not invoked");
 
       private CancellationResult RemainingTimeExpiredCancellationResult(Exception exception)
-         => CreateCancellationResult("The request was cancelled due to lack of remaining time and responded promptly; it may or may not have completed", exception);
+         => CreateCancellationResult("The request was cancelled due to lack of remaining time; the handler responded promptly but may not have completed", exception);
 
       private CancellationResult HardLimitCancellationResult()
-         => CreateCancellationResult("The request was cancelled due to lack of remaining time but failed to respond; it may or may not have completed");
-
-      private CancellationResult CancelledByHostCancellationResult(Exception exception)
-         => CreateCancellationResult("The request was cancelled by the host; it may or may not have completed", exception);
+         => CreateCancellationResult("The request was cancelled due to lack of remaining time; the handler failed to respond and may not have completed");
 
       private CancellationResult CreateCancellationResult(string message, Exception? exception = null)
       {

@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Stackage.Aws.Lambda.Abstractions;
+using Stackage.Aws.Lambda;
 using Stackage.Aws.Lambda.Extensions;
 using Stackage.Aws.Lambda.Middleware;
 

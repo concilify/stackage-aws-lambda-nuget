@@ -106,13 +106,11 @@ public class LambdaListenerBuilder
       var serviceProvider = services.BuildServiceProvider();
 
       var lambdaRuntime = serviceProvider.GetRequiredService<ILambdaRuntime>();
-      var logger = serviceProvider.GetRequiredService<ILogger<LambdaListener>>();
 
       return new LambdaListener(
          lambdaRuntime,
          serviceProvider,
-         _pipelineBuilder.Build(),
-         logger);
+         _pipelineBuilder.Build());
    }
 
    private static RuntimeApiClient CreateRuntimeApiClient(IServiceProvider serviceProvider)

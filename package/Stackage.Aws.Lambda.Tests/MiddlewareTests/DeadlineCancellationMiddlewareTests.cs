@@ -65,31 +65,20 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
          Assert.That(elapsedMs, elapsedMsConstraint);
       }
 
-#if NET8_0
       [Test]
-      public async Task cancellation_token_passed_to_inner_delegate_can_be_cancelled_by_incoming_cancellation_token()
+      public void bubbles_exception_to_caller_when_inner_delegate_cancelled_by_incoming_cancellation_token()
       {
          var cancellationTokenSource = new CancellationTokenSource(200);
 
-         var deadlineCancellation = new DeadlineCancellation();
-
-         var (result, elapsedMs) = await InvokeAsync(
-            PipelineDelegateFake.LongRunningAndExpectsToBeCancelled(),
-            LambdaContextFake.WithRemainingTime(TimeSpan.FromSeconds(10)),
-            options: CreateDeadlineCancellationOptions(1, 10),
-            cancellationInitializer: deadlineCancellation,
-            requestAborted: cancellationTokenSource.Token);
-
-         Assert.That(result, Is.InstanceOf<CancellationResult>());
-         var cancellationResult = (CancellationResult) result;
-         Assert.That(cancellationResult.Message, Is.EqualTo("The request was cancelled by the host; it may or may not have completed"));
-
-         Assert.That(deadlineCancellation.Token.IsCancellationRequested, Is.True);
-
-         // Middleware should run for c.200ms
-         Assert.That(elapsedMs, Is.LessThan(220));
+         Assert.ThrowsAsync<TaskCanceledException>(async () =>
+         {
+            await InvokeAsync(
+               PipelineDelegateFake.LongRunningAndExpectsToBeCancelled(),
+               LambdaContextFake.WithRemainingTime(TimeSpan.FromSeconds(10)),
+               options: CreateDeadlineCancellationOptions(1, 10),
+               requestAborted: cancellationTokenSource.Token);
+         });
       }
-#endif
 
       [Test]
       public void bubbles_exception_to_caller_when_inner_delegate_cancelled_by_another_cancellation_token()
@@ -158,9 +147,9 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
          const string shortcutCancellationMessage =
             "The request was shortcut due to lack of remaining time; the handler was not invoked";
          const string hardCancellationMessage =
-            "The request was cancelled due to lack of remaining time but failed to respond; it may or may not have completed";
+            "The request was cancelled due to lack of remaining time; the handler failed to respond and may not have completed";
          const string softCancellationMessage =
-            "The request was cancelled due to lack of remaining time and responded promptly; it may or may not have completed";
+            "The request was cancelled due to lack of remaining time; the handler responded promptly but may not have completed";
 
          return new[]
          {
