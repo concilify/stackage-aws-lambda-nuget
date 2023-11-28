@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Amazon.Lambda.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Stackage.Aws.Lambda.Abstractions;
+using Stackage.Aws.Lambda.Exceptions;
 
 namespace Stackage.Aws.Lambda.Results;
 
@@ -32,7 +33,7 @@ public class CancellationResult : ILambdaResult
 
       public async Task ExecuteAsync(ILambdaContext context, CancellationResult result)
       {
-         await _lambdaRuntime.ReplyWithInvocationFailureAsync(new TaskCanceledException(result.Message), context);
+         await _lambdaRuntime.ReplyWithInvocationFailureAsync(new CancellationError(result.Message), context);
       }
    }
 }

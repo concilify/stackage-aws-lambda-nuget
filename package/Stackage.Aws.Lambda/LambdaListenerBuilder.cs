@@ -4,11 +4,15 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Net.Http;
 using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
 using Amazon.Lambda.Core;
 using Amazon.Lambda.RuntimeSupport;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Stackage.Aws.Lambda.Abstractions;
+using Stackage.Aws.Lambda.Exceptions;
 using Stackage.Aws.Lambda.Executors;
 using Stackage.Aws.Lambda.Results;
 
@@ -74,8 +78,53 @@ public class LambdaListenerBuilder
 
    public ILambdaListener Build()
    {
-      // TODO: Catch initialisation errors and send to the runtime API
+      try
+      {
+         var serviceProvider = BuildServiceProvider();
 
+         var lambdaRuntime = serviceProvider.GetRequiredService<ILambdaRuntime>();
+
+         return new LambdaListener(
+            lambdaRuntime,
+            serviceProvider,
+            _pipelineBuilder.Build());
+      }
+      catch (Exception e)
+      {
+         return new NoOpLambdaListener(
+            CreateRuntimeApiClient(NullLogger<LoggingHttpClientHandler>.Instance),
+            e);
+      }
+   }
+
+   private static RuntimeApiClient CreateRuntimeApiClient(IServiceProvider serviceProvider)
+   {
+      var logger = serviceProvider.GetRequiredService<ILogger<LoggingHttpClientHandler>>();
+
+      return CreateRuntimeApiClient(logger);
+   }
+
+   private static RuntimeApiClient CreateRuntimeApiClient(ILogger<LoggingHttpClientHandler> logger)
+   {
+      var httpClient = new HttpClient(new LoggingHttpClientHandler(new HttpClientHandler(), logger));
+
+      ConfigureRuntimeHttpClient(httpClient);
+
+      return new RuntimeApiClient(httpClient);
+   }
+
+   private static void ConfigureRuntimeHttpClient(HttpClient httpClient)
+   {
+      var dotnetRuntimeVersion = new DirectoryInfo(RuntimeEnvironment.GetRuntimeDirectory()).Name;
+      var amazonLambdaRuntimeSupportVersion = typeof(LambdaBootstrap).Assembly.GetName().Version;
+      var userAgentString = $"aws-lambda-dotnet/{dotnetRuntimeVersion}-{amazonLambdaRuntimeSupportVersion}";
+
+      httpClient.DefaultRequestHeaders.Add("User-Agent", userAgentString);
+      httpClient.Timeout = RuntimeApiHttpTimeout;
+   }
+
+   private ServiceProvider BuildServiceProvider()
+   {
       var services = new ServiceCollection();
       var hostServiceProvider = new HostServiceProvider();
 
@@ -103,34 +152,29 @@ public class LambdaListenerBuilder
          configureService(services, hostServiceProvider);
       }
 
-      var serviceProvider = services.BuildServiceProvider();
-
-      var lambdaRuntime = serviceProvider.GetRequiredService<ILambdaRuntime>();
-
-      return new LambdaListener(
-         lambdaRuntime,
-         serviceProvider,
-         _pipelineBuilder.Build());
+      return services.BuildServiceProvider();
    }
 
-   private static RuntimeApiClient CreateRuntimeApiClient(IServiceProvider serviceProvider)
+   private class NoOpLambdaListener : ILambdaListener
    {
-      var logger = serviceProvider.GetRequiredService<ILogger<LoggingHttpClientHandler>>();
+      private readonly IRuntimeApiClient _runtimeApiClient;
+      private readonly Exception _exception;
 
-      var httpClient = new HttpClient(new LoggingHttpClientHandler(new HttpClientHandler(), logger));
+      public NoOpLambdaListener(
+         IRuntimeApiClient runtimeApiClient,
+         Exception exception)
+      {
+         _runtimeApiClient = runtimeApiClient;
+         _exception = exception;
+      }
 
-      ConfigureRuntimeHttpClient(httpClient);
+      public async Task ListenAsync(CancellationToken cancellationToken)
+      {
+         Console.WriteLine($"Failed to initialise LambdaListener{Environment.NewLine}{_exception}");
 
-      return new RuntimeApiClient(httpClient);
-   }
-
-   private static void ConfigureRuntimeHttpClient(HttpClient httpClient)
-   {
-      var dotnetRuntimeVersion = new DirectoryInfo(RuntimeEnvironment.GetRuntimeDirectory()).Name;
-      var amazonLambdaRuntimeSupportVersion = typeof(LambdaBootstrap).Assembly.GetName().Version;
-      var userAgentString = $"aws-lambda-dotnet/{dotnetRuntimeVersion}-{amazonLambdaRuntimeSupportVersion}";
-
-      httpClient.DefaultRequestHeaders.Add("User-Agent", userAgentString);
-      httpClient.Timeout = RuntimeApiHttpTimeout;
+         await _runtimeApiClient.ReportInitializationErrorAsync(
+            new InitialisationError("Request handler could not be initialised"),
+            cancellationToken);
+      }
    }
 }

@@ -139,6 +139,8 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Tests.ControllerTests
          var response = await httpClient.PostAsync("/my-function/2018-06-01/runtime/init/error", content);
 
          Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Accepted));
+
+         Assert.Fail("response content includes status");
       }
 
       [Test]
