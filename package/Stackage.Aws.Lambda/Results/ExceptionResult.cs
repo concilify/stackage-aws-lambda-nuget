@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Amazon.Lambda.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Stackage.Aws.Lambda.Abstractions;
+using Stackage.Aws.Lambda.Exceptions;
 
 namespace Stackage.Aws.Lambda.Results;
 
@@ -10,7 +11,12 @@ public class ExceptionResult : ILambdaResult
 {
    public ExceptionResult(Exception exception)
    {
-      Exception = exception ?? throw new ArgumentNullException(nameof(exception));
+      Exception = exception;
+   }
+
+   internal ExceptionResult(string message)
+   {
+      Exception = new UnhandledError(message ?? throw new ArgumentNullException(nameof(message)));
    }
 
    public Exception Exception { get; }

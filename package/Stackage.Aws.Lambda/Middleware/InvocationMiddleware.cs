@@ -48,7 +48,7 @@ public class InvocationMiddleware : ILambdaMiddleware
       {
          _logger.LogError(e, "Request handler failed ({ElapsedMilliseconds}ms)", stopwatch.ElapsedMilliseconds);
 
-         return new ExceptionResult(e);
+         return new ExceptionResult("The request failed due to an unhandled error; the handler may or may not have completed");
       }
    }
 }

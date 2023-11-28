@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using FakeItEasy;
 using NUnit.Framework;
 using Stackage.Aws.Lambda.Abstractions;
+using Stackage.Aws.Lambda.Exceptions;
 using Stackage.Aws.Lambda.Results;
 using Stackage.Aws.Lambda.Tests.Fakes;
 
@@ -23,7 +24,7 @@ public class CancellationResultExecutorTests
       await result.ExecuteResultAsync(context, serviceProvider);
 
       A.CallTo(() => lambdaRuntime.ReplyWithInvocationFailureAsync(
-            A<Exception>.That.Matches(e => e is TaskCanceledException && e.Message == "ArbitraryMessage"),
+            A<Exception>.That.Matches(e => e is CancellationError && e.Message == "ArbitraryMessage"),
             context))
          .MustHaveHappenedOnceExactly();
    }
