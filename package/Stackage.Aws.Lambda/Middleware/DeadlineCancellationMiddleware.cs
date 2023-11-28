@@ -1,55 +1,98 @@
 using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Amazon.Lambda.Core;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Stackage.Aws.Lambda.Abstractions;
+using Stackage.Aws.Lambda.Options;
+using Stackage.Aws.Lambda.Results;
 
 namespace Stackage.Aws.Lambda.Middleware
 {
-   public class DeadlineCancellationMiddleware<TRequest> : ILambdaMiddleware<TRequest>
+   public class DeadlineCancellationMiddleware : ILambdaMiddleware
    {
-      private readonly HostOptions _hostOptions;
       private readonly IDeadlineCancellationInitializer _deadlineCancellationInitializer;
-      private readonly ILambdaResultFactory _resultFactory;
-      private readonly ILogger<DeadlineCancellationMiddleware<TRequest>> _logger;
+      private readonly DeadlineCancellationOptions _options;
+      private readonly ILogger<DeadlineCancellationMiddleware> _logger;
 
       public DeadlineCancellationMiddleware(
-         IOptions<HostOptions> hostOptions,
          IDeadlineCancellationInitializer deadlineCancellationInitializer,
-         ILambdaResultFactory resultFactory,
-         ILogger<DeadlineCancellationMiddleware<TRequest>> logger)
+         IOptions<DeadlineCancellationOptions> options,
+         ILogger<DeadlineCancellationMiddleware> logger)
       {
-         _hostOptions = hostOptions.Value;
          _deadlineCancellationInitializer = deadlineCancellationInitializer;
-         _resultFactory = resultFactory;
+         _options = options.Value;
          _logger = logger;
       }
 
       public async Task<ILambdaResult> InvokeAsync(
-         TRequest request,
+         Stream inputStream,
          ILambdaContext context,
          IServiceProvider requestServices,
-         PipelineDelegate<TRequest> next)
+         PipelineDelegate next,
+         CancellationToken requestAborted)
       {
-         var effectiveRemainingTimeMs = Math.Max((int) context.RemainingTime.Subtract(_hostOptions.ShutdownTimeout).TotalMilliseconds, 0);
+         // Pipeline is given context.RemainingTime less HardInterval and SoftInterval to complete
+         // Cancellation is triggered if it hasn't completed, giving it SoftInterval to cancel
+         // The middleware intervenes if it hasn't cancelled, giving HardInterval for the caller to reply to the lambda runtime
 
-         using var requestAborted = new CancellationTokenSource(effectiveRemainingTimeMs);
+         var timeBeforeHardLimitMs = RemainingTimeLessInterval(context, _options.HardInterval);
+         var timeBeforeCancellationMs = RemainingTimeLessInterval(context, _options.HardInterval + _options.SoftInterval);
 
-         _deadlineCancellationInitializer.Initialize(requestAborted.Token);
+         if (timeBeforeCancellationMs <= 0)
+         {
+            return ShortcutCancellationResult();
+         }
+
+         using var remainingTimeExpired = new CancellationTokenSource(timeBeforeCancellationMs);
+         using var remainingTimeExpiredOrRequestAborted = CancellationTokenSource.CreateLinkedTokenSource(
+            remainingTimeExpired.Token, requestAborted);
+
+         _deadlineCancellationInitializer.Initialize(remainingTimeExpiredOrRequestAborted.Token);
+
+         var nextTask = next(inputStream, context, requestServices, remainingTimeExpiredOrRequestAborted.Token);
+         var hardLimitExpiredTask = Task.Delay(timeBeforeHardLimitMs, requestAborted);
+
+         var completedTask = await Task.WhenAny(nextTask, hardLimitExpiredTask);
+
+         if (completedTask == hardLimitExpiredTask)
+         {
+            await hardLimitExpiredTask;
+
+            return HardLimitCancellationResult();
+         }
 
          try
          {
-            return await next(request, context, requestServices);
+            return await nextTask;
          }
-         catch (OperationCanceledException) when (requestAborted.IsCancellationRequested)
+         catch (OperationCanceledException e) when (remainingTimeExpired.IsCancellationRequested)
          {
-            _logger.LogWarning("The request was aborted gracefully");
-
-            return _resultFactory.RemainingTimeExpired();
+            return RemainingTimeExpiredCancellationResult(e);
          }
+      }
+
+      private static int RemainingTimeLessInterval(ILambdaContext context, TimeSpan interval)
+      {
+         return Math.Max((int) context.RemainingTime.Subtract(interval).TotalMilliseconds, 0);
+      }
+
+      private CancellationResult ShortcutCancellationResult()
+         => CreateCancellationResult("The request was shortcut due to lack of remaining time; the handler was not invoked");
+
+      private CancellationResult RemainingTimeExpiredCancellationResult(Exception exception)
+         => CreateCancellationResult("The request was cancelled due to lack of remaining time; the handler responded promptly but may not have completed", exception);
+
+      private CancellationResult HardLimitCancellationResult()
+         => CreateCancellationResult("The request was cancelled due to lack of remaining time; the handler failed to respond and may not have completed");
+
+      private CancellationResult CreateCancellationResult(string message, Exception? exception = null)
+      {
+         _logger.LogError(exception, message);
+
+         return new CancellationResult(message);
       }
    }
 }

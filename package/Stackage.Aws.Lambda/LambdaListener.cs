@@ -1,47 +1,36 @@
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Amazon.Lambda.RuntimeSupport;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
+using Microsoft.Extensions.DependencyInjection;
 using Stackage.Aws.Lambda.Abstractions;
 
 namespace Stackage.Aws.Lambda
 {
-   public class LambdaListener<TRequest> : ILambdaListener<TRequest>
+   internal class LambdaListener : ILambdaListener
    {
-      private readonly ILambdaPipelineBuilder<TRequest> _pipelineBuilder;
-      private readonly IRuntimeApiClient _runtimeApiClient;
-      private readonly IRequestHandler<TRequest> _requestHandler;
-      private readonly LambdaPipelineBuilderOptions<TRequest> _options;
-      private readonly ILogger<LambdaListener<TRequest>> _logger;
+      private readonly ILambdaRuntime _lambdaRuntime;
+      private readonly IServiceProvider _serviceProvider;
+      private readonly PipelineDelegate _pipelineAsync;
 
       public LambdaListener(
-         ILambdaPipelineBuilder<TRequest> pipelineBuilder,
-         IRuntimeApiClient runtimeApiClient,
-         IRequestHandler<TRequest> requestHandler,
-         IOptions<LambdaPipelineBuilderOptions<TRequest>> options,
-         ILogger<LambdaListener<TRequest>> logger)
+         ILambdaRuntime lambdaRuntime,
+         IServiceProvider serviceProvider,
+         PipelineDelegate pipelineAsync)
       {
-         _pipelineBuilder = pipelineBuilder;
-         _runtimeApiClient = runtimeApiClient;
-         _requestHandler = requestHandler;
-         _options = options.Value;
-         _logger = logger;
+         _lambdaRuntime = lambdaRuntime;
+         _serviceProvider = serviceProvider;
+         _pipelineAsync = pipelineAsync;
       }
 
       public async Task ListenAsync(CancellationToken cancellationToken)
       {
-         var pipelineAsync = InitialisePipeline();
-
          while (!cancellationToken.IsCancellationRequested)
          {
             try
             {
-               await WaitAndInvokeNextAsync(pipelineAsync, cancellationToken);
+               using var invocation = await _lambdaRuntime.WaitForInvocationAsync(cancellationToken);
+
+               await InvokeAndReplyAsync(invocation, cancellationToken);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
@@ -49,55 +38,13 @@ namespace Stackage.Aws.Lambda
          }
       }
 
-      private PipelineDelegate<TRequest> InitialisePipeline()
+      internal async Task InvokeAndReplyAsync(ILambdaInvocation invocation, CancellationToken cancellationToken)
       {
-         _logger.LogDebug("Initialising pipeline");
+         using var scope = _serviceProvider.CreateScope();
 
-         _options.ConfigurePipeline?.Invoke(_pipelineBuilder);
+         var lambdaResult = await _pipelineAsync(invocation.InputStream, invocation.Context, scope.ServiceProvider, cancellationToken);
 
-         var pipelineAsync = _pipelineBuilder.Build();
-
-         _logger.LogDebug("Pipeline initialised");
-
-         return pipelineAsync;
-      }
-
-      private async Task WaitAndInvokeNextAsync(PipelineDelegate<TRequest> pipelineAsync, CancellationToken cancellationToken)
-      {
-         using var invocation = await _runtimeApiClient.GetNextInvocationAsync(cancellationToken);
-
-         var stopwatch = Stopwatch.StartNew();
-
-         using var _ = _logger.BeginScope(new Dictionary<string, object> {{"AwsRequestId", invocation.LambdaContext.AwsRequestId}});
-
-         _logger.LogInformation("Handling request");
-
-         Stream response;
-
-         try
-         {
-            // TODO: Need to be able to cancel this
-
-            response = await _requestHandler.HandleAsync(invocation.InputStream, invocation.LambdaContext, pipelineAsync);
-         }
-         catch (Exception e)
-         {
-            _logger.LogError(e, "Request handler failed {ElapsedMilliseconds}ms", stopwatch.ElapsedMilliseconds);
-
-            await _runtimeApiClient.ReportInvocationErrorAsync(invocation.LambdaContext.AwsRequestId, e, CancellationToken.None);
-            return;
-         }
-
-         try
-         {
-            _logger.LogInformation("Request handler completed {ElapsedMilliseconds}ms", stopwatch.ElapsedMilliseconds);
-
-            await _runtimeApiClient.SendResponseAsync(invocation.LambdaContext.AwsRequestId, response, CancellationToken.None);
-         }
-         finally
-         {
-            await response.DisposeAsync();
-         }
+         await lambdaResult.ExecuteResultAsync(invocation.Context, scope.ServiceProvider);
       }
    }
 }

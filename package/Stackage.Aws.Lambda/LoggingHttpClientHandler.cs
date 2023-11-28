@@ -28,11 +28,16 @@ namespace Stackage.Aws.Lambda
 
          HttpResponseMessage response;
 
-         using (_logger.BeginScope(new Dictionary<string, object?> {{"HttpMethod", request.Method}, {"Uri", request.RequestUri}}))
+         using (_logger.BeginScope(new Dictionary<string, object?> { ["HttpMethod"] = request.Method, ["Uri"] = request.RequestUri }))
          {
             try
             {
                response = await base.SendAsync(request, cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+               _logger.LogWarning("HTTP request cancelled {ElapsedMilliseconds}ms", stopwatch.ElapsedMilliseconds);
+               throw;
             }
             catch (Exception e)
             {

@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Stackage.Aws.Lambda.Abstractions;
 using Stackage.Aws.Lambda.Extensions;
@@ -5,16 +6,23 @@ using Stackage.Aws.Lambda.Middleware;
 
 namespace Stackage.Aws.Lambda.Tests
 {
-   public class StartupWithDeadlineCancellation<TRequest> : ILambdaStartup<TRequest>
+   public class StartupWithDeadlineCancellation : ILambdaStartup
    {
-      public void ConfigureServices(IServiceCollection services)
+      private readonly IConfiguration _configuration;
+
+      public StartupWithDeadlineCancellation(IConfiguration configuration)
       {
-         services.AddDeadlineCancellation();
+         _configuration = configuration;
       }
 
-      public void ConfigurePipeline(ILambdaPipelineBuilder<TRequest> pipelineBuilder)
+      public void ConfigureServices(IServiceCollection services)
       {
-         pipelineBuilder.Use<DeadlineCancellationMiddleware<TRequest>, TRequest>();
+         services.AddDeadlineCancellation(_configuration);
+      }
+
+      public void ConfigurePipeline(ILambdaPipelineBuilder pipelineBuilder)
+      {
+         pipelineBuilder.Use<DeadlineCancellationMiddleware>();
       }
    }
 }

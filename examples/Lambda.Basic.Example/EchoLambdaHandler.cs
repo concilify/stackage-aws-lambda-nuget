@@ -16,9 +16,9 @@ namespace Lambda.Basic.Example
          _logger = logger;
       }
 
-      public async Task<ILambdaResult> HandleAsync(Stream request, ILambdaContext context)
+      public async Task<ILambdaResult> HandleAsync(Stream input, ILambdaContext context)
       {
-         using var reader = new StreamReader(request);
+         using var reader = new StreamReader(input);
 
          var payload = await reader.ReadToEndAsync();
 

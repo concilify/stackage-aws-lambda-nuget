@@ -15,10 +15,23 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Tests.ControllerTests
 {
    public class RuntimeControllerTests
    {
+      #if NET8_0
       [Test]
-      public void invocations_endpoint_without_outstanding_requests_blocks()
+      public async Task invocations_endpoint_without_outstanding_requests_blocks()
       {
-         using var webApplicationFactory = new WebApplicationFactory<FakeRuntimeStartup>();
+         await using var webApplicationFactory = new WebApplicationFactory<FakeRuntimeStartup>();
+         using var httpClient = webApplicationFactory.CreateClient();
+
+         // Needs sufficient time for the app to startup before being cancelled
+         httpClient.Timeout = TimeSpan.FromMilliseconds(1000);
+
+         Assert.ThrowsAsync<TaskCanceledException>(async () => { await httpClient.GetAsync("/my-function/2018-06-01/runtime/invocation/next"); });
+      }
+      #else
+      [Test]
+      public async Task invocations_endpoint_without_outstanding_requests_blocks()
+      {
+         await using var webApplicationFactory = new WebApplicationFactory<FakeRuntimeStartup>();
          using var httpClient = webApplicationFactory.CreateClient();
 
          // Needs sufficient time for the app to startup before being cancelled
@@ -26,6 +39,7 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Tests.ControllerTests
 
          Assert.ThrowsAsync<OperationCanceledException>(async () => { await httpClient.GetAsync("/my-function/2018-06-01/runtime/invocation/next"); });
       }
+      #endif
 
       [Test]
       public async Task invocations_endpoint_returns_outstanding_request()
@@ -34,7 +48,7 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Tests.ControllerTests
          A.CallTo(() => functionsService.WaitForNextInvocationAsync("my-function", A<CancellationToken>._))
             .Returns(Task.FromResult(new LambdaRequest("aws-request-id", "{\"foo\":\"bar\"}")));
 
-         using var webApplicationFactory = CreateWebApplicationFactory(functionsService);
+         await using var webApplicationFactory = CreateWebApplicationFactory(functionsService);
          using var httpClient = webApplicationFactory.CreateClient();
 
          var response = await httpClient.GetAsync("/my-function/2018-06-01/runtime/invocation/next");
@@ -57,7 +71,7 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Tests.ControllerTests
       {
          var functionsService = A.Fake<IFunctionsService>();
 
-         using var webApplicationFactory = CreateWebApplicationFactory(functionsService);
+         await using var webApplicationFactory = CreateWebApplicationFactory(functionsService);
          using var httpClient = webApplicationFactory.CreateClient();
 
          var content = JsonContent.Create(new {bar = "foo"});
@@ -72,7 +86,7 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Tests.ControllerTests
       {
          var functionsService = A.Fake<IFunctionsService>();
 
-         using var webApplicationFactory = CreateWebApplicationFactory(functionsService);
+         await using var webApplicationFactory = CreateWebApplicationFactory(functionsService);
          using var httpClient = webApplicationFactory.CreateClient();
 
          var content = JsonContent.Create(new {bar = "foo"});
@@ -87,7 +101,7 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Tests.ControllerTests
       {
          var functionsService = A.Fake<IFunctionsService>();
 
-         using var webApplicationFactory = CreateWebApplicationFactory(functionsService);
+         await using var webApplicationFactory = CreateWebApplicationFactory(functionsService);
          using var httpClient = webApplicationFactory.CreateClient();
 
          var content = JsonContent.Create(new {bar = "foo"});
@@ -102,7 +116,7 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Tests.ControllerTests
       {
          var functionsService = A.Fake<IFunctionsService>();
 
-         using var webApplicationFactory = CreateWebApplicationFactory(functionsService);
+         await using var webApplicationFactory = CreateWebApplicationFactory(functionsService);
          using var httpClient = webApplicationFactory.CreateClient();
 
          var content = JsonContent.Create(new {bar = "foo"});

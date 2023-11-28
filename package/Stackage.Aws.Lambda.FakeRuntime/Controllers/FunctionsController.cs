@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Stackage.Aws.Lambda.FakeRuntime.Model;
 using Stackage.Aws.Lambda.FakeRuntime.Services;
@@ -29,7 +30,7 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Controllers
 
          if (invocationType == "DryRun")
          {
-            Response.Headers.Add("x-amzn-RequestId", _idGenerator.Generate());
+            Response.Headers.Append("x-amzn-RequestId", _idGenerator.Generate());
             return NoContent();
          }
 
@@ -47,7 +48,7 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Controllers
             request = _functionsService.Invoke(functionName, await reader.ReadToEndAsync());
          }
 
-         Response.Headers.Add("x-amzn-RequestId", request.AwsRequestId);
+         Response.Headers.Append("x-amzn-RequestId", request.AwsRequestId);
 
          if (invocationType == "Event")
          {
@@ -63,7 +64,7 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Controllers
 
          var completion = _functionsService.GetCompletion(functionName, request.AwsRequestId);
 
-         Response.Headers.Add("X-Amz-Executed-Version", "$LATEST");
+         Response.Headers.Append("X-Amz-Executed-Version", "$LATEST");
 
          return Content(completion.ResponseBody, "application/json");
       }

@@ -6,6 +6,13 @@ namespace Stackage.Aws.Lambda.Tests
 {
    public static class Extensions
    {
+      public static string ReadToEnd(this Stream stream)
+      {
+         using var reader = new StreamReader(stream);
+
+         return reader.ReadToEnd();
+      }
+
       public static async Task<string> ReadToEndAsync(this Stream stream)
       {
          using var reader = new StreamReader(stream);

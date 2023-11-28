@@ -8,9 +8,9 @@ namespace Stackage.Aws.Lambda.Tests.Handlers
 {
    public class DecorateObjectLambdaHandler : ILambdaHandler<StringPoco>
    {
-      public Task<ILambdaResult> HandleAsync(StringPoco request, ILambdaContext context)
+      public Task<ILambdaResult> HandleAsync(StringPoco input, ILambdaContext context)
       {
-         return Task.FromResult<ILambdaResult>(new ContentResult<StringPoco>(new StringPoco {Value = $"[{request.Value}]"}));
+         return Task.FromResult<ILambdaResult>(new ObjectResult(new StringPoco {Value = $"[{input.Value}]"}));
       }
    }
 }

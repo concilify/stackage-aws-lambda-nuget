@@ -1,8 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Net;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Amazon.Lambda.Serialization.SystemTextJson;
@@ -23,50 +20,45 @@ namespace Stackage.Aws.Lambda.Tests
       private const string RuntimeApiHostAndPort = "localhost:9001";
 
       public static async Task<LambdaFunction.Dictionary> RunAsync(
-         Action<ILambdaHostBuilder> configureLambdaHost,
-         Action<IConfigurationBuilder> configureConfiguration,
          string functionName,
-         params LambdaRequest[] invokeRequests)
+         LambdaRequest invokeRequest,
+         Action<LambdaListenerBuilder> configureLambdaListener = null,
+         Action<IConfigurationBuilder> configureConfiguration = null)
       {
-         return await RunAsync<Stream>(
-            LambdaHost.Create(builder =>
-            {
-               builder.UseSerializer<CamelCaseLambdaJsonSerializer>();
-               configureLambdaHost(builder);
-            }),
-            configureConfiguration,
-            functionName,
-            invokeRequests);
+         return await RunAsync(functionName, new[] { invokeRequest }, configureLambdaListener, configureConfiguration);
       }
 
-      public static async Task<LambdaFunction.Dictionary> RunAsync<TRequest>(
-         Action<ILambdaHostBuilder<TRequest>> configureLambdaHost,
-         Action<IConfigurationBuilder> configureConfiguration,
+      public static async Task<LambdaFunction.Dictionary> RunAsync(
          string functionName,
-         params LambdaRequest[] invokeRequests)
-      {
-         return await RunAsync<TRequest>(
-            LambdaHost.Create<TRequest>(builder =>
-            {
-               builder.UseSerializer<CamelCaseLambdaJsonSerializer>();
-               configureLambdaHost(builder);
-            }),
-            configureConfiguration,
-            functionName,
-            invokeRequests);
-      }
-
-      private static async Task<LambdaFunction.Dictionary> RunAsync<TRequest>(
-         IHostBuilder builder,
-         Action<IConfigurationBuilder> configureConfiguration,
-         string functionName,
-         params LambdaRequest[] invokeRequests)
+         IEnumerable<LambdaRequest> invokeRequests,
+         Action<LambdaListenerBuilder> configureLambdaListener = null,
+         Action<IConfigurationBuilder> configureConfiguration = null)
       {
          Environment.SetEnvironmentVariable("AWS_LAMBDA_RUNTIME_API", $"{RuntimeApiHostAndPort}/{functionName}");
 
          var tokenSource = new CancellationTokenSource(5000);
 
-         using var host = builder
+         using var host = CreateHost(configureConfiguration, tokenSource);
+
+         var lambdaListener = CreateLambdaListener(configureLambdaListener);
+
+         var functions = host.Services.GetRequiredService<LambdaFunction.Dictionary>();
+
+         QueueRequests(functions, functionName, invokeRequests);
+
+         var hostRunTask = host.RunAsync(tokenSource.Token);
+         var lambdaListenerListenTask = lambdaListener.ListenAsync(tokenSource.Token);
+
+         await Task.WhenAll(hostRunTask, lambdaListenerListenTask);
+
+         return functions;
+      }
+
+      private static IHost CreateHost(
+         Action<IConfigurationBuilder> configureConfiguration,
+         CancellationTokenSource tokenSource)
+      {
+         return new HostBuilder()
             .ConfigureAppConfiguration(configurationBuilder =>
             {
                configurationBuilder.AddInMemoryCollection(new Dictionary<string, string>
@@ -80,14 +72,6 @@ namespace Stackage.Aws.Lambda.Tests
                configuration.MinimumLevel.Debug();
                configuration.WriteTo.Console();
             })
-            .ConfigureServices(services =>
-            {
-               services.Decorate<ILambdaListener<TRequest>, DelayedStartLambdaListener<TRequest>>();
-               services.Configure<HostOptions>(options =>
-               {
-                  options.ShutdownTimeout = TimeSpan.FromMilliseconds(10);
-               });
-            })
             .ConfigureWebHostDefaults(webHostBuilder =>
             {
                webHostBuilder.UseStartup<FakeRuntimeStartup>();
@@ -97,7 +81,23 @@ namespace Stackage.Aws.Lambda.Tests
                });
             })
             .Build();
+      }
 
+      private static ILambdaListener CreateLambdaListener(Action<LambdaListenerBuilder> configureLambdaListener)
+      {
+         var lambdaListenerBuilder = new LambdaListenerBuilder()
+            .UseSerializer<CamelCaseLambdaJsonSerializer>();
+
+         configureLambdaListener(lambdaListenerBuilder);
+
+         return lambdaListenerBuilder.Build();
+      }
+
+      private static void QueueRequests(
+         LambdaFunction.Dictionary functions,
+         string functionName,
+         IEnumerable<LambdaRequest> invokeRequests)
+      {
          var function = new LambdaFunction(functionName);
 
          foreach (var request in invokeRequests)
@@ -105,55 +105,7 @@ namespace Stackage.Aws.Lambda.Tests
             function.QueuedRequests.Enqueue(request);
          }
 
-         var functions = host.Services.GetRequiredService<LambdaFunction.Dictionary>();
          functions.TryAdd(function.Name, function);
-
-         try
-         {
-            await host.RunAsync(tokenSource.Token);
-         }
-         catch (Exception e)
-         {
-            var x = e.Message;
-            throw;
-         }
-
-         return functions;
-      }
-
-      // Delay listener start to allow for fake runtime api to start
-      private class DelayedStartLambdaListener<TRequest> : ILambdaListener<TRequest>
-      {
-         private readonly ILambdaListener<TRequest> _innerListener;
-
-         public DelayedStartLambdaListener(ILambdaListener<TRequest> innerListener)
-         {
-            _innerListener = innerListener;
-         }
-
-         public async Task ListenAsync(CancellationToken cancellationToken)
-         {
-            using var httpClient = new HttpClient {BaseAddress = new Uri($"http://{RuntimeApiHostAndPort}")};
-
-            for (var i = 0; i < 30; i++)
-            {
-               try
-               {
-                  var response = await httpClient.GetAsync("health", cancellationToken);
-
-                  if (response.StatusCode == HttpStatusCode.OK)
-                  {
-                     break;
-                  }
-               }
-               catch
-               {
-                  await Task.Delay(100, cancellationToken);
-               }
-            }
-
-            await _innerListener.ListenAsync(cancellationToken);
-         }
       }
    }
 }

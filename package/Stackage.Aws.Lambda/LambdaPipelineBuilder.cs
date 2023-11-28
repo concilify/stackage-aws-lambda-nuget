@@ -1,43 +1,46 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Stackage.Aws.Lambda.Abstractions;
+using Stackage.Aws.Lambda.Executors;
+using Stackage.Aws.Lambda.Extensions;
+using Stackage.Aws.Lambda.Middleware;
 
 namespace Stackage.Aws.Lambda
 {
-   public class LambdaPipelineBuilder<TRequest> : ILambdaPipelineBuilder<TRequest>
+   public class LambdaPipelineBuilder : ILambdaPipelineBuilder
    {
-      private readonly IList<Func<PipelineDelegate<TRequest>, PipelineDelegate<TRequest>>> _components =
-         new List<Func<PipelineDelegate<TRequest>, PipelineDelegate<TRequest>>>();
+      private readonly List<Func<PipelineDelegate, PipelineDelegate>> _middlewares = new();
 
-      public ILambdaPipelineBuilder<TRequest> Use(Func<PipelineDelegate<TRequest>, PipelineDelegate<TRequest>> middleware)
+      public ILambdaPipelineBuilder Use(Func<PipelineDelegate, PipelineDelegate> middleware)
       {
-         _components.Add(middleware);
+         _middlewares.Add(middleware);
 
          return this;
       }
 
-      public PipelineDelegate<TRequest> Build()
+      public PipelineDelegate Build()
       {
-         PipelineDelegate<TRequest> pipeline = (request, context, requestServices) =>
+         PipelineDelegate pipeline = (inputStream, context, requestServices, requestAborted) =>
          {
-            var handlerAsync = requestServices.GetService<PipelineDelegate<TRequest>>();
+            var handlerExecutor = requestServices.GetService<ILambdaHandlerExecutor>();
 
-            if (handlerAsync == null)
+            if (handlerExecutor == null)
             {
-               throw new InvalidOperationException($"No handler configured. Please specify a handler via ILambdaHostBuilder.UseHandler.");
+               throw new InvalidOperationException("No handler configured. Please specify a handler via ILambdaHostBuilder.UseHandler.");
             }
 
-            return handlerAsync(request, context, requestServices);
+            return handlerExecutor.ExecuteAsync(inputStream, context, requestAborted);
          };
 
-         foreach (var component in _components.Reverse())
+         for (var i = _middlewares.Count - 1; i >= 0; i--)
          {
-            pipeline = component(pipeline);
+            pipeline = _middlewares[i](pipeline);
          }
 
-         return pipeline;
+         var invocationMiddlewareFunc = MiddlewareExtensions.Resolve<InvocationMiddleware>();
+
+         return invocationMiddlewareFunc(pipeline);
       }
    }
 }

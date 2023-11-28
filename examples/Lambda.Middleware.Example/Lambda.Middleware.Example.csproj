@@ -2,9 +2,14 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
+    <InvariantGlobalization>true</InvariantGlobalization>
     <IsPackable>false</IsPackable>
-    <AWSProjectType>Lambda</AWSProjectType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net8.0'">
+    <PublishAot>true</PublishAot>
+    <MSBuildTreatWarningsAsErrors>true</MSBuildTreatWarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>
@@ -21,7 +26,7 @@
 
   <ItemGroup>
     <PackageReference Include="Amazon.Lambda.Serialization.SystemTextJson" Version="2.4.0" />
-    <PackageReference Include="Stackage.Aws.Lambda" Version="0.8.0" />
+    <PackageReference Include="Stackage.Aws.Lambda" Version="0.15.0" />
   </ItemGroup>
 
 </Project>

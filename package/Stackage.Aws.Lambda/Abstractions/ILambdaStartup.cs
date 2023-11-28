@@ -2,10 +2,10 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Stackage.Aws.Lambda.Abstractions
 {
-   public interface ILambdaStartup<TRequest>
+   public interface ILambdaStartup
    {
       void ConfigureServices(IServiceCollection services);
 
-      void ConfigurePipeline(ILambdaPipelineBuilder<TRequest> pipelineBuilder);
+      void ConfigurePipeline(ILambdaPipelineBuilder pipelineBuilder);
    }
 }
