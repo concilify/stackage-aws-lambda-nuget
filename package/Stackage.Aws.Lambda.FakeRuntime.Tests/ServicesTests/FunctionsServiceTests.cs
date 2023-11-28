@@ -100,12 +100,7 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Tests.ServicesTests
             await service.WaitForNextInvocationAsync("unknown-function", cancellationTokenSource.Token);
          });
 
-         Assert.That(functions.Count, Is.EqualTo(1));
-
-         var function = functions["unknown-function"];
-         Assert.That(function.Name, Is.EqualTo("unknown-function"));
-
-         Assert.That(function.QueuedRequests.Count, Is.EqualTo(0));
+         Assert.That(functions.Count, Is.EqualTo(0));
       }
 
       [Test]
@@ -122,11 +117,7 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Tests.ServicesTests
 
          Assert.ThrowsAsync<OperationCanceledException>(async () => { await service.WaitForNextInvocationAsync(functionName, cancellationTokenSource.Token); });
 
-         Assert.That(functions.Count, Is.EqualTo(1));
-
-         var function = functions[functionName];
-
-         Assert.That(function.QueuedRequests.Count, Is.EqualTo(0));
+         Assert.That(functions.Count, Is.EqualTo(0));
       }
 
       [Test]
@@ -175,7 +166,7 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Tests.ServicesTests
       }
 
       [Test]
-      public void response_tests()
+      public void invocation_response_tests()
       {
          const string functionName = "known-function";
          const string awsRequestId = "the-request-id";
@@ -197,7 +188,7 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Tests.ServicesTests
       }
 
       [Test]
-      public void error_tests()
+      public void invocation_error_tests()
       {
          const string functionName = "known-function";
          const string awsRequestId = "the-request-id";
@@ -216,6 +207,25 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Tests.ServicesTests
 
          function.CompletedRequests.Values.Should()
             .BeEquivalentTo(new[] {new LambdaCompletion("the-request-id", "the-request-body", "the-response-body", false)});
+      }
+
+      [Test]
+      public void initialisation_error_tests()
+      {
+         const string functionName = "known-function";
+         const string awsRequestId = "the-request-id";
+
+         var functions = new LambdaFunction.Dictionary();
+         var existingFunction = new LambdaFunction(functionName);
+         existingFunction.InFlightRequests.TryAdd(awsRequestId, new LambdaRequest(awsRequestId, "the-request-body"));
+
+         functions.TryAdd(functionName, existingFunction);
+
+         var service = CreateService(functions);
+
+         service.InitialisationError(functionName, "the-response-body");
+
+         Assert.That(functions.ContainsKey(functionName), Is.False);
       }
 
       private static async Task AssertRequestsAreEqualAsync(LambdaRequest.Queue requests, IList<LambdaRequest> expectedRequests)

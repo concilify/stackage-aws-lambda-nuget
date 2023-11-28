@@ -52,7 +52,10 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Controllers
             return Accepted();
          }
 
-         await request.WaitForCompletion();
+         if (!await request.WaitForCompletion(HttpContext.RequestAborted))
+         {
+            return StatusCode(499);
+         }
 
          var completion = _functionsService.GetCompletion(functionName, request.AwsRequestId);
 

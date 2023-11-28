@@ -13,7 +13,7 @@ using Stackage.Aws.Lambda.FakeRuntime.Services;
 
 namespace Stackage.Aws.Lambda.FakeRuntime.Tests.ControllerTests
 {
-   public class RuntimeInvocationControllerTests
+   public class RuntimeControllerTests
    {
       #if NET8_0
       [Test]
@@ -67,7 +67,7 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Tests.ControllerTests
       }
 
       [Test]
-      public async Task response_endpoint_returns_okay()
+      public async Task invocation_response_endpoint_returns_accepted()
       {
          var functionsService = A.Fake<IFunctionsService>();
 
@@ -78,11 +78,11 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Tests.ControllerTests
 
          var response = await httpClient.PostAsync("/my-function/2018-06-01/runtime/invocation/my-request-id/response", content);
 
-         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Accepted));
       }
 
       [Test]
-      public async Task response_endpoint_calls_functions_service_with_name_and_body()
+      public async Task invocation_response_endpoint_calls_functions_service_with_name_and_body()
       {
          var functionsService = A.Fake<IFunctionsService>();
 
@@ -97,7 +97,7 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Tests.ControllerTests
       }
 
       [Test]
-      public async Task error_endpoint_returns_okay()
+      public async Task invocation_error_endpoint_returns_accepted()
       {
          var functionsService = A.Fake<IFunctionsService>();
 
@@ -108,11 +108,11 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Tests.ControllerTests
 
          var response = await httpClient.PostAsync("/my-function/2018-06-01/runtime/invocation/my-request-id/error", content);
 
-         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Accepted));
       }
 
       [Test]
-      public async Task error_endpoint_calls_functions_service_with_name_and_body()
+      public async Task invocation_error_endpoint_calls_functions_service_with_name_and_body()
       {
          var functionsService = A.Fake<IFunctionsService>();
 
@@ -124,6 +124,36 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Tests.ControllerTests
          await httpClient.PostAsync("/my-function/2018-06-01/runtime/invocation/my-request-id/error", content);
 
          A.CallTo(() => functionsService.InvocationError("my-function", "my-request-id", "{\"bar\":\"foo\"}")).MustHaveHappenedOnceExactly();
+      }
+
+      [Test]
+      public async Task initialisation_error_endpoint_returns_accepted()
+      {
+         var functionsService = A.Fake<IFunctionsService>();
+
+         using var webApplicationFactory = CreateWebApplicationFactory(functionsService);
+         using var httpClient = webApplicationFactory.CreateClient();
+
+         var content = JsonContent.Create(new {bar = "foo"});
+
+         var response = await httpClient.PostAsync("/my-function/2018-06-01/runtime/init/error", content);
+
+         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Accepted));
+      }
+
+      [Test]
+      public async Task initialisation_error_endpoint_calls_functions_service_with_name_and_body()
+      {
+         var functionsService = A.Fake<IFunctionsService>();
+
+         using var webApplicationFactory = CreateWebApplicationFactory(functionsService);
+         using var httpClient = webApplicationFactory.CreateClient();
+
+         var content = JsonContent.Create(new {bar = "foo"});
+
+         await httpClient.PostAsync("/my-function/2018-06-01/runtime/init/error", content);
+
+         A.CallTo(() => functionsService.InitialisationError("my-function", "{\"bar\":\"foo\"}")).MustHaveHappenedOnceExactly();
       }
 
       private static WebApplicationFactory<FakeRuntimeStartup> CreateWebApplicationFactory(IFunctionsService functionsService)

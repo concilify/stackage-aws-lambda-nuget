@@ -30,7 +30,9 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Services
 
          function.QueuedRequests.Enqueue(request);
 
-         _logger.LogInformation("Invocation requested {awsRequestId} {request}", request.AwsRequestId, request.Body);
+         _logger.LogInformation(
+            "Function {functionName} invoked {awsRequestId} {request}",
+            functionName, request.AwsRequestId, request.Body);
 
          return request;
       }
@@ -39,7 +41,9 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Services
       {
          var function = _functions.GetOrAdd(functionName, name => new LambdaFunction(name));
 
-         _logger.LogInformation("Function {functionName} connected", functionName);
+         _logger.LogInformation(
+            "Function {functionName} waiting for invocation...",
+            functionName);
 
          try
          {
@@ -47,13 +51,19 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Services
 
             function.InFlightRequests.TryAdd(request.AwsRequestId, request);
 
-            _logger.LogInformation("Invocation scheduled {awsRequestId}", request.AwsRequestId);
+            _logger.LogInformation(
+               "Function {functionName} scheduled {awsRequestId}",
+               functionName, request.AwsRequestId);
 
             return request;
          }
          catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
          {
-            _logger.LogInformation("Function {functionName} disconnected", functionName);
+            _functions.TryRemove(functionName, out _);
+
+            _logger.LogInformation(
+               "Function {functionName} disconnected",
+               functionName);
             throw;
          }
       }
@@ -62,14 +72,27 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Services
       {
          RequestCompleted(functionName, awsRequestId, body, true);
 
-         _logger.LogInformation("Invocation succeeded {awsRequestId} {response}", awsRequestId, body);
+         _logger.LogInformation(
+            "Function {functionName} succeeded {awsRequestId} {response}",
+            functionName, awsRequestId, body);
       }
 
       public void InvocationError(string functionName, string awsRequestId, string body)
       {
          RequestCompleted(functionName, awsRequestId, body, false);
 
-         _logger.LogInformation("Invocation failed {awsRequestId} {response}", awsRequestId, body);
+         _logger.LogInformation(
+            "Function {functionName} failed {awsRequestId} {response}",
+            functionName, awsRequestId, body);
+      }
+
+      public void InitialisationError(string functionName, string body)
+      {
+         _functions.TryRemove(functionName, out _);
+
+         _logger.LogInformation(
+            "Function {functionName} failed initialisation {response}",
+            functionName, body);
       }
 
       public LambdaCompletion GetCompletion(string functionName, string awsRequestId)
