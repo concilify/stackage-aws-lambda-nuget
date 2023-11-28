@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
@@ -32,11 +31,6 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Controllers
          {
             _functionsService.InitialisationError(functionName, await reader.ReadToEndAsync());
          }
-
-         //throw new NotSupportedException();
-         // TODO
-         // Non-recoverable initialization error. Runtime should exit after reporting
-         //    the error. Error will be served in response to the first invoke.
 
          return Accepted();
       }

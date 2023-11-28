@@ -88,10 +88,6 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Services
 
       public void InitialisationError(string functionName, string body)
       {
-         // TODO:
-         // Non-recoverable initialization error. Runtime should exit after reporting
-         //    the error. Error will be served in response to the first invoke.
-
          _functions.TryRemove(functionName, out _);
 
          _logger.LogInformation(

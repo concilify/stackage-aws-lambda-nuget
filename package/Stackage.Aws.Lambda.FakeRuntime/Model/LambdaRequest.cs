@@ -33,8 +33,6 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Model
          }
          catch (OperationCanceledException)
          {
-            Console.WriteLine($"foo {_cancellationTokenSource.IsCancellationRequested}");
-
             return _cancellationTokenSource.IsCancellationRequested;
          }
          finally

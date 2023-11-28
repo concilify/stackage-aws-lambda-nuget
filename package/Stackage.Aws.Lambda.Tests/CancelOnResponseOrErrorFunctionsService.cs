@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Stackage.Aws.Lambda.FakeRuntime.Model;
@@ -42,7 +43,7 @@ namespace Stackage.Aws.Lambda.Tests
 
       public void InitialisationError(string functionName, string body)
       {
-         throw new System.NotImplementedException();
+         throw new NotSupportedException();
       }
 
       public LambdaCompletion GetCompletion(string functionName, string awsRequestId)
