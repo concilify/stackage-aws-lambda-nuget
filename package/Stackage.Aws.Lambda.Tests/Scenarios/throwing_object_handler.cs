@@ -35,8 +35,15 @@ namespace Stackage.Aws.Lambda.Tests.Scenarios
       {
          var responseBody = _responses.Values.Single().ResponseBody;
 
-         Assert.That(responseBody, Contains.Substring("\"errorType\": \"Exception\""));
-         Assert.That(responseBody, Contains.Substring("\"errorMessage\": \"ThrowingObjectLambdaHandler failed\""));
+         Assert.That(responseBody, Contains.Substring("\"errorType\": \"UnhandledError\""));
+         Assert.That(responseBody, Contains.Substring("\"errorMessage\": \"The request failed due to an unhandled error; the handler may or may not have completed\""));
+      }
+
+      [Test]
+      public void log_includes_exception()
+      {
+         // TODO: Include in other scenarios
+         Assert.Fail();
       }
    }
 }

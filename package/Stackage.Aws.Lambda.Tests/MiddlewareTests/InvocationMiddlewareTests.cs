@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using NUnit.Framework;
 using Stackage.Aws.Lambda.Abstractions;
+using Stackage.Aws.Lambda.Exceptions;
 using Stackage.Aws.Lambda.Middleware;
 using Stackage.Aws.Lambda.Results;
 using Stackage.Aws.Lambda.Tests.Fakes;
@@ -76,7 +77,8 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
 
          Assert.That(result, Is.InstanceOf<ExceptionResult>());
          var exceptionResult = (ExceptionResult)result;
-         Assert.That(exceptionResult.Exception, Is.SameAs(exceptionToThrow));
+         Assert.That(exceptionResult.Exception, Is.InstanceOf<UnhandledError>());
+         Assert.That(exceptionResult.Exception.Message, Is.EqualTo("The request failed due to an unhandled error; the handler may or may not have completed"));
       }
 
       [Test]
@@ -120,7 +122,8 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
 
          Assert.That(result, Is.InstanceOf<ExceptionResult>());
          var exceptionResult = (ExceptionResult)result;
-         Assert.That(exceptionResult.Exception, Is.SameAs(exceptionToThrow));
+         Assert.That(exceptionResult.Exception, Is.InstanceOf<UnhandledError>());
+         Assert.That(exceptionResult.Exception.Message, Is.EqualTo("The request failed due to an unhandled error; the handler may or may not have completed"));
       }
 
       private static InvocationMiddleware CreateMiddleware(

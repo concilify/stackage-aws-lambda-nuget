@@ -44,8 +44,15 @@ namespace Stackage.Aws.Lambda.Tests.Scenarios
       {
          var responseBody = _responses.Values.Single().ResponseBody;
 
-         Assert.That(responseBody, Contains.Substring("\"errorType\": \"TaskCanceledException\""));
+         Assert.That(responseBody, Contains.Substring("\"errorType\": \"CancellationError\""));
          Assert.That(responseBody, Contains.Substring("\"errorMessage\": \"The request was cancelled due to lack of remaining time; the handler responded promptly but may not have completed\""));
+      }
+
+      [Test]
+      public void log_includes_exception()
+      {
+         // TODO: Include in other scenarios
+         Assert.Fail();
       }
    }
 }
