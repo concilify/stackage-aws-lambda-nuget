@@ -1,4 +1,3 @@
-using System;
 using System.Threading.Tasks;
 using Amazon.Lambda.Core;
 using Stackage.Aws.Lambda.Abstractions;
@@ -10,7 +9,7 @@ namespace Stackage.Aws.Lambda.Tests.Handlers
    {
       public Task<ILambdaResult> HandleAsync(StringPoco input, ILambdaContext context)
       {
-         throw new Exception("ThrowingObjectLambdaHandler failed");
+         throw new CustomException("ThrowingObjectLambdaHandler failed");
       }
    }
 }
