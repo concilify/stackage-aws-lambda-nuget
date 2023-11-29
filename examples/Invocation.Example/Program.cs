@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Amazon;
 using Amazon.Lambda;
@@ -13,10 +14,20 @@ namespace Invocation.Example
       {
          var lambdaClient = new AmazonLambdaClient(RegionEndpoint.EUWest2);
 
+         var responseTasks = Enumerable.Range(0, 20)
+            .Select(_ => InvokeOneAsync(lambdaClient));
+
+         var responses = await Task.WhenAll(responseTasks);
+
+         Console.WriteLine(responses[0]);
+      }
+
+      private static async Task<string> InvokeOneAsync(AmazonLambdaClient lambdaClient)
+      {
          var request = new InvokeRequest
          {
             FunctionName = "lambda-middleware-example",
-            Payload = "{\"action\":\"throw\"}",
+            Payload = "{\"action\":\"delay:100\"}",
             InvocationType = InvocationType.RequestResponse
          };
 
@@ -24,9 +35,7 @@ namespace Invocation.Example
 
          using var reader = new StreamReader(response.Payload);
 
-         var payload = await reader.ReadToEndAsync();
-
-         Console.WriteLine(payload);
+         return await reader.ReadToEndAsync();
       }
    }
 }
