@@ -65,6 +65,16 @@ public class LambdaListenerBuilder
       return this;
    }
 
+   public LambdaListenerBuilder ConfigureServices(Action<IServiceCollection> configureServices)
+   {
+      _configureServices.Add((services, _) =>
+      {
+         configureServices(services);
+      });
+
+      return this;
+   }
+
    public LambdaListenerBuilder UseSerializer<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]TSerializer>()
       where TSerializer : class, ILambdaSerializer
    {
