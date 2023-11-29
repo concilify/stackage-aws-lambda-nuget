@@ -32,7 +32,7 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Controllers
             _functionsService.InitialisationError(functionName, await reader.ReadToEndAsync());
          }
 
-         return Accepted();
+         return Accepted(new { status = "error" });
       }
 
       [HttpGet("invocation/next")]

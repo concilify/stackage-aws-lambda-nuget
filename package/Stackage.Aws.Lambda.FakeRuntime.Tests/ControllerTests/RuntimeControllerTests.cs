@@ -131,7 +131,7 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Tests.ControllerTests
       {
          var functionsService = A.Fake<IFunctionsService>();
 
-         using var webApplicationFactory = CreateWebApplicationFactory(functionsService);
+         await using var webApplicationFactory = CreateWebApplicationFactory(functionsService);
          using var httpClient = webApplicationFactory.CreateClient();
 
          var content = JsonContent.Create(new {bar = "foo"});
@@ -139,6 +139,7 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Tests.ControllerTests
          var response = await httpClient.PostAsync("/my-function/2018-06-01/runtime/init/error", content);
 
          Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Accepted));
+         Assert.That(await response.Content.ReadAsStringAsync(), Is.EqualTo("{\"status\":\"error\"}"));
       }
 
       [Test]
@@ -146,7 +147,7 @@ namespace Stackage.Aws.Lambda.FakeRuntime.Tests.ControllerTests
       {
          var functionsService = A.Fake<IFunctionsService>();
 
-         using var webApplicationFactory = CreateWebApplicationFactory(functionsService);
+         await using var webApplicationFactory = CreateWebApplicationFactory(functionsService);
          using var httpClient = webApplicationFactory.CreateClient();
 
          var content = JsonContent.Create(new {bar = "foo"});
