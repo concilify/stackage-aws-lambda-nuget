@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,9 +9,12 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using NUnit.Framework;
 using Stackage.Aws.Lambda.Abstractions;
+using Stackage.Aws.Lambda.Exceptions;
 using Stackage.Aws.Lambda.Middleware;
 using Stackage.Aws.Lambda.Results;
 using Stackage.Aws.Lambda.Tests.Fakes;
+using Stackage.Aws.Lambda.Tests.Fakes.Model;
+using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
 {
@@ -62,8 +66,10 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
       public async Task returns_error_result_when_inner_delegate_throws_exception()
       {
          var exceptionToThrow = new Exception();
+         var logs = new List<LogEntry>();
 
-         var middleware = CreateMiddleware();
+         var middleware = CreateMiddleware(
+            logger: new CapturingLogger<InvocationMiddleware>(logs));
 
          var pipelineDelegate = PipelineDelegateFake.Throws(exceptionToThrow);
 
@@ -76,7 +82,11 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
 
          Assert.That(result, Is.InstanceOf<ExceptionResult>());
          var exceptionResult = (ExceptionResult)result;
-         Assert.That(exceptionResult.Exception, Is.SameAs(exceptionToThrow));
+         Assert.That(exceptionResult.Exception, Is.InstanceOf<UnhandledError>());
+         Assert.That(exceptionResult.Exception.Message, Is.EqualTo("The request failed due to an unhandled error; the handler may or may not have completed"));
+
+         Assert.That(logs[0].LogLevel, Is.EqualTo(LogLevel.Error));
+         Assert.That(logs[0].Exception, Is.SameAs(exceptionToThrow));
       }
 
       [Test]
@@ -106,8 +116,10 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
       {
          var cancellationTokenSource = new CancellationTokenSource(10000);
          var exceptionToThrow = new OperationCanceledException();
+         var logs = new List<LogEntry>();
 
-         var middleware = CreateMiddleware();
+         var middleware = CreateMiddleware(
+            logger: new CapturingLogger<InvocationMiddleware>(logs));
 
          var pipelineDelegate = PipelineDelegateFake.Throws(exceptionToThrow);
 
@@ -120,7 +132,11 @@ namespace Stackage.Aws.Lambda.Tests.MiddlewareTests
 
          Assert.That(result, Is.InstanceOf<ExceptionResult>());
          var exceptionResult = (ExceptionResult)result;
-         Assert.That(exceptionResult.Exception, Is.SameAs(exceptionToThrow));
+         Assert.That(exceptionResult.Exception, Is.InstanceOf<UnhandledError>());
+         Assert.That(exceptionResult.Exception.Message, Is.EqualTo("The request failed due to an unhandled error; the handler may or may not have completed"));
+
+         Assert.That(logs[0].LogLevel, Is.EqualTo(LogLevel.Error));
+         Assert.That(logs[0].Exception, Is.SameAs(exceptionToThrow));
       }
 
       private static InvocationMiddleware CreateMiddleware(

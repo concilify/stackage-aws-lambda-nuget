@@ -19,7 +19,7 @@ namespace Stackage.Aws.Lambda.Tests
    {
       private const string RuntimeApiHostAndPort = "localhost:9001";
 
-      public static async Task<LambdaFunction.Dictionary> RunAsync(
+      public static async Task<LambdaCompletion.Dictionary> RunAsync(
          string functionName,
          LambdaRequest invokeRequest,
          Action<LambdaListenerBuilder> configureLambdaListener = null,
@@ -28,7 +28,7 @@ namespace Stackage.Aws.Lambda.Tests
          return await RunAsync(functionName, new[] { invokeRequest }, configureLambdaListener, configureConfiguration);
       }
 
-      public static async Task<LambdaFunction.Dictionary> RunAsync(
+      public static async Task<LambdaCompletion.Dictionary> RunAsync(
          string functionName,
          IEnumerable<LambdaRequest> invokeRequests,
          Action<LambdaListenerBuilder> configureLambdaListener = null,
@@ -51,7 +51,7 @@ namespace Stackage.Aws.Lambda.Tests
 
          await Task.WhenAll(hostRunTask, lambdaListenerListenTask);
 
-         return functions;
+         return functions[functionName].CompletedRequests;
       }
 
       private static IHost CreateHost(

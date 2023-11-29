@@ -8,31 +8,30 @@ namespace Stackage.Aws.Lambda.Tests.Scenarios
 {
    public class happy_stream_handler
    {
-      private LambdaCompletion.Dictionary _responses;
+      private LambdaCompletion.Dictionary _completions;
 
       [OneTimeSetUp]
       public async Task setup_scenario()
       {
-         var functions = await TestHost.RunAsync(
+         _completions = await TestHost.RunAsync(
             "my-function",
             new LambdaRequest("req-id", "AnyString"),
             configureLambdaListener: builder =>
             {
                builder.UseHandler<DecorateStreamLambdaHandler>();
             });
-         _responses = functions.Single().Value.CompletedRequests;
       }
 
       [Test]
       public void single_response_received()
       {
-         Assert.That(_responses.Count, Is.EqualTo(1));
+         Assert.That(_completions.Count, Is.EqualTo(1));
       }
 
       [Test]
       public void handler_received_request_and_returned_response()
       {
-         Assert.That(_responses.Values.Single().ResponseBody, Is.EqualTo("[AnyString]"));
+         Assert.That(_completions.Values.Single().ResponseBody, Is.EqualTo("[AnyString]"));
       }
    }
 }
