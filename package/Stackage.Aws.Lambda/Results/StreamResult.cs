@@ -9,12 +9,12 @@ namespace Stackage.Aws.Lambda.Results;
 
 public class StreamResult : ILambdaResult
 {
-   private readonly Stream _outputStream;
-
    public StreamResult(Stream outputStream)
    {
-      _outputStream = outputStream ?? throw new ArgumentNullException(nameof(outputStream));
+      Content = outputStream ?? throw new ArgumentNullException(nameof(outputStream));
    }
+
+   public Stream Content { get; }
 
    public Task ExecuteResultAsync(ILambdaContext context, IServiceProvider requestServices)
    {
@@ -35,11 +35,11 @@ public class StreamResult : ILambdaResult
       {
          try
          {
-            await _lambdaRuntime.ReplyWithInvocationSuccessAsync(result._outputStream, context);
+            await _lambdaRuntime.ReplyWithInvocationSuccessAsync(result.Content, context);
          }
          finally
          {
-            await result._outputStream.DisposeAsync();
+            await result.Content.DisposeAsync();
          }
       }
    }

@@ -12,8 +12,7 @@ public static class LambdaRuntimeFake
 {
    public static ILambdaRuntime Valid() => new WaitForInvocationLambdaRuntime(_ => A.Fake<ILambdaInvocation>());
 
-   public static ILambdaRuntime WaitForInvocationCallback(Func<CancellationToken, ILambdaInvocation> callback)
-      => new WaitForInvocationLambdaRuntime(callback);
+   public static ILambdaRuntime ValidFake() => A.Fake<ILambdaRuntime>();
 
    public static ILambdaRuntime WaitForInvocationCallback(Action<CancellationToken> callback)
       => new WaitForInvocationLambdaRuntime(token =>
@@ -27,16 +26,6 @@ public static class LambdaRuntimeFake
       var runtimeApiClient = A.Fake<ILambdaRuntime>();
 
       A.CallTo(() => runtimeApiClient.ReplyWithInvocationSuccessAsync(A<Stream>._, A<ILambdaContext>._))
-         .Invokes(callback);
-
-      return runtimeApiClient;
-   }
-
-   public static ILambdaRuntime ReplyWithInvocationFailureCallback(Action<Exception, ILambdaContext> callback)
-   {
-      var runtimeApiClient = A.Fake<ILambdaRuntime>();
-
-      A.CallTo(() => runtimeApiClient.ReplyWithInvocationFailureAsync(A<Exception>._, A<ILambdaContext>._))
          .Invokes(callback);
 
       return runtimeApiClient;

@@ -24,7 +24,7 @@ internal class LambdaRuntime : ILambdaRuntime
       return new LambdaInvocation(invocationRequest.InputStream, invocationRequest.LambdaContext);
    }
 
-   public async Task ReplyWithInvocationSuccessAsync(Stream outputStream, ILambdaContext context)
+   public async Task ReplyWithInvocationSuccessAsync(Stream? outputStream, ILambdaContext context)
    {
       await _runtimeApiClient.SendResponseAsync(context.AwsRequestId, outputStream);
    }

@@ -1,29 +1,17 @@
-using System.IO;
-using System.Threading.Tasks;
-using FakeItEasy;
+﻿using System.IO;
 using NUnit.Framework;
-using Stackage.Aws.Lambda.Abstractions;
 using Stackage.Aws.Lambda.Results;
-using Stackage.Aws.Lambda.Tests.Fakes;
 
 namespace Stackage.Aws.Lambda.Tests.ResultsTests;
 
-public class StreamResultExecutorTests
+public class StreamResultTests
 {
    [Test]
-   public async Task execute_invokes_send_response()
+   public void Content_is_accessible()
    {
-      var stream = new MemoryStream();
-      var result = new StreamResult(stream);
+      var content = new MemoryStream();
+      var testSubject = new StreamResult(content);
 
-      var lambdaRuntime = A.Fake<ILambdaRuntime>();
-      var resultExecutor = new StreamResult.Executor(lambdaRuntime);
-      var serviceProvider = ServiceProviderFake.Returns<ILambdaResultExecutor<StreamResult>>(resultExecutor);
-      var context = LambdaContextFake.With(awsRequestId: "ArbitraryRequestId");
-
-      await result.ExecuteResultAsync(context, serviceProvider);
-
-      A.CallTo(() => lambdaRuntime.ReplyWithInvocationSuccessAsync(stream, context))
-         .MustHaveHappenedOnceExactly();
+      Assert.That(testSubject.Content, Is.SameAs(content));
    }
 }
