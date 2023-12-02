@@ -10,12 +10,12 @@ namespace Stackage.Aws.Lambda.Results;
 
 public class StringResult : ILambdaResult
 {
-   private readonly string _content;
-
    public StringResult(string content)
    {
-      _content = content ?? throw new ArgumentNullException(nameof(content));
+      Content = content ?? throw new ArgumentNullException(nameof(content));
    }
+
+   public string Content { get; }
 
    public Task ExecuteResultAsync(ILambdaContext context, IServiceProvider requestServices)
    {
@@ -34,7 +34,7 @@ public class StringResult : ILambdaResult
 
       public async Task ExecuteAsync(ILambdaContext context, StringResult result)
       {
-         using var outputStream = new MemoryStream(Encoding.UTF8.GetBytes(result._content));
+         using var outputStream = new MemoryStream(Encoding.UTF8.GetBytes(result.Content));
 
          await _lambdaRuntime.ReplyWithInvocationSuccessAsync(outputStream, context);
       }

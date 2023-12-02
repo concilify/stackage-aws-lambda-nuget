@@ -151,6 +151,7 @@ public class LambdaListenerBuilder
          builder.AddJsonConsole();
       });
 
+      services.AddTransient<ILambdaResultExecutor<VoidResult>, VoidResult.Executor>();
       services.AddTransient<ILambdaResultExecutor<StreamResult>, StreamResult.Executor>();
       services.AddTransient<ILambdaResultExecutor<StringResult>, StringResult.Executor>();
       services.AddTransient<ILambdaResultExecutor<ObjectResult>, ObjectResult.Executor>();
