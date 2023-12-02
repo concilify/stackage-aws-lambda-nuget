@@ -6,7 +6,7 @@ namespace Stackage.Aws.Lambda.Tests.ResultsTests;
 public class CancellationResultTests
 {
    [Test]
-   public void Message_is_accessible()
+   public void message_is_accessible()
    {
       var testSubject = new CancellationResult("ArbitraryMessage");
 

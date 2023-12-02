@@ -6,7 +6,7 @@ namespace Stackage.Aws.Lambda.Tests.ResultsTests;
 public class StringResultTests
 {
    [Test]
-   public void Content_is_accessible()
+   public void content_is_accessible()
    {
       var testSubject = new StringResult("ArbitraryContent");
 

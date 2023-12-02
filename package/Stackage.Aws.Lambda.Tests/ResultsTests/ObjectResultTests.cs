@@ -6,7 +6,7 @@ namespace Stackage.Aws.Lambda.Tests.ResultsTests;
 public class ObjectResultTests
 {
    [Test]
-   public void Content_is_accessible()
+   public void content_is_accessible()
    {
       var content = new object();
       var testSubject = new ObjectResult(content);

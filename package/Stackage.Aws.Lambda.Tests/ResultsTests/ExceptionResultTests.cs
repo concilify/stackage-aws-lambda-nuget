@@ -7,7 +7,7 @@ namespace Stackage.Aws.Lambda.Tests.ResultsTests;
 public class ExceptionResultTests
 {
    [Test]
-   public void Exception_is_accessible()
+   public void exception_is_accessible()
    {
       var exception = new Exception();
       var testSubject = new ExceptionResult(exception);

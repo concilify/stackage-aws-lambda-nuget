@@ -7,7 +7,7 @@ namespace Stackage.Aws.Lambda.Tests.ResultsTests;
 public class StreamResultTests
 {
    [Test]
-   public void Content_is_accessible()
+   public void content_is_accessible()
    {
       var content = new MemoryStream();
       var testSubject = new StreamResult(content);
