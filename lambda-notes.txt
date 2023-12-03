@@ -1,0 +1,5 @@
+https://github.com/aws/aws-lambda-dotnet/tree/master/Tools/LambdaTestTool
+
+https://www.youtube.com/watch?v=l4_WNjMHDx8
+
+https://aws.amazon.com/blogs/compute/introducing-the-net-6-runtime-for-aws-lambda/
