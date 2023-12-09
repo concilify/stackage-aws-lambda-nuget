@@ -2,46 +2,46 @@
 
 ## Custom Runtime
 
-The `Stackage.Aws.Lambda` package contains a custom runtime for creating AWS Lambda functions using .NET Core 3.1 or .NET 6.0 that can benefit from the Dependency Injection and Middleware patterns.
+The `Stackage.Aws.Lambda` package contains a custom runtime for creating AWS Lambda functions using .NET 6.0 or .NET 8.0 that can benefit from the Dependency Injection and Middleware patterns.
 
 You can use the `Stackage.Aws.Lambda.DotNetNew.Templates` package via `dotnet new` to create an empty AWS Lambda function which you can update with the code snippets below.
 
 Your AWS Lambda function is a .NET console app with `Program.cs` similar to the following snippet. If you're familiar with ASP.NET Core, this won't look too unfamiliar.
 
 ```cs
-   var host = LambdaHost.Create<MyRequest>(builder =>
-      {
-          builder.UseStartup<LambdaStartup>();
-          builder.UseSerializer<CamelCaseLambdaJsonSerializer>();
-          builder.UseHandler<MyLambdaHandler, MyRequest>();
-      })
-      .ConfigureLogging(builder =>
-      {
-          builder.AddJsonConsole();
-      })
-      .Build();
+using var consoleLifetime = new ConsoleLifetime();
 
-   await host.RunAsync();
+await new LambdaListenerBuilder()
+   .UseHandler<LambdaHandler, Request>()
+   .UseStartup<LambdaStartup>()
+   .UseSerializer<SourceGeneratorLambdaJsonSerializer<LambdaJsonSerializerContext>>()
+   .Build()
+   .ListenAsync(consoleLifetime.Token);
 ```
 
-You can configure your services and middleware using an implementation of `ILambdaStartup` as per the following snippet. The intention is that you can create middleware that you can share across all your AWS Lambda Funtions.
+You can optionally configure your services and middleware using an implementation of `ILambdaStartup` as per the following snippet. The intention is that you can create middleware that you can share across all your AWS Lambda Funtions.
 
 ```cs
-   public class LambdaStartup : ILambdaStartup<MyRequest>
-   {
-      public void ConfigureServices(IServiceCollection services)
-      {
-         services.AddSingleton<ILambdaResultFactory, HttpLambdaResultFactory>();
-         services.AddDeadlineCancellation();
-      }
+public class LambdaStartup : ILambdaStartup<MyRequest>
+{
+   private readonly IConfiguration _configuration;
 
-      public void ConfigurePipeline(ILambdaPipelineBuilder<MyRequest> pipelineBuilder)
-      {
-        pipelineBuilder.Use<RequestLoggingMiddleware<MyRequest>, MyRequest>();
-        pipelineBuilder.Use<ExceptionHandlingMiddleware<MyRequest>, MyRequest>();
-        pipelineBuilder.Use<DeadlineCancellationMiddleware<MyRequest>, MyRequest>();
-      }
+   public LambdaStartup(IConfiguration configuration)
+   {
+      _configuration = configuration;
    }
+
+   public void ConfigureServices(IServiceCollection services)
+   {
+      services.AddDeadlineCancellation(_configuration);
+   }
+
+   public void ConfigurePipeline(ILambdaPipelineBuilder pipelineBuilder)
+   {
+      pipelineBuilder.Use<RequestLoggingMiddleware>();
+      pipelineBuilder.Use<DeadlineCancellationMiddleware>();
+   }
+}
 ```
 
 Each AWS Lambda function must be in a separate .NET console app, but there's no reason you can't share code between them via shared packages or even house more than one per code repository.
@@ -49,13 +49,15 @@ Each AWS Lambda function must be in a separate .NET console app, but there's no 
 You can use constructor injection to inject your services into the handler. A basic handler will look something like the following snippet.
 
 ```cs
-   public class MyLambdaHandler : ILambdaHandler<MyRequest>
+public class MyLambdaHandler : ILambdaHandler<Request>
+{
+   public Task<ILambdaResult> HandleAsync(Request request, ILambdaContext context)
    {
-      public async Task<ILambdaResult> HandleAsync(MyRequest input, ILambdaContext context)
-      {
-         return new StringResult("Greetings!");
-      }
+      ILambdaResult result = new StringResult($"Greetings {request.Name}!");
+
+      return Task.FromResult(result);
    }
+}
 ```
 
 ## Fake Runtime API
@@ -68,10 +70,10 @@ To enable debugging AWS Lambda functions that use the custom runtime, install th
 dotnet tool install --global Stackage.Aws.Lambda.FakeRuntime
 ```
 
-To update to the latest version of the `Stackage.Aws.Lambda.FakeRuntime` package use the `dotnet tool update --global` command.
+To update to the latest version of the `Stackage.Aws.Lambda.FakeRuntime` package use the `dotnet new update` command. Be aware that this will attempt to update all dotnet new template packages.
 
 ```
-dotnet tool update --global Stackage.Aws.Lambda.FakeRuntime
+dotnet new update
 ```
 
 ### Usage
