@@ -55,9 +55,16 @@ runtime rid
 
 init time and actual time
 
+## What's stopping us
+
+Newtonsoft
+InvariantGlobalization=true
+
 ## Deployment
 
 Further
+
+ I wouldn't use this method for production workflows, but
 
 https://nodogmablog.bryanhogan.net/2022/11/lambda-cold-starts-net-7-native-aot-vs-net-6-managed-runtime/
 
